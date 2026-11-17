@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CYBERLOCK: Quarantine Room</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --accent:#0067c0;--accent-dark:#005a9e;--accent-light:#e5f0fb;
+  --win-bg:#f3f3f3;--win-surface:#fff;--win-border:#e5e5e5;
+  --text:#1a1a1a;--text-2:#5c5c5c;--text-3:#6b6b6b;
+  --danger:#c42b1c;--danger-light:#fdecea;--success:#0f7b3f;--success-light:#e6f4ec;
+  --warn:#b26b00;--warn-light:#fff4e0;--radius:8px;
+  --font:'Segoe UI','Segoe UI Web (West European)',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+html,body{height:100%}
+body{font-family:var(--font);overflow:hidden;background:#050a14;color:var(--text);-webkit-font-smoothing:antialiased;user-select:none}
+.hidden{display:none !important}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+input{font-family:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:5px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.38);background-clip:content-box}
+
+/* BOOT */
+#boot-screen{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 40%,#0d1b33 0%,#050a14 70%);display:flex;align-items:center;justify-content:center;transition:opacity .7s ease}
+#boot-screen.fade{opacity:0;pointer-events:none}
+.boot-inner{width:360px;text-align:center}
+.boot-logo{width:78px;height:78px;margin:0 auto 26px;color:#4da3ff;filter:drop-shadow(0 0 26px rgba(77,163,255,.55));animation:bootPulse 2.2s ease-in-out infinite}
+.boot-logo svg{width:100%;height:100%}
+@keyframes bootPulse{0%,100%{opacity:.72;transform:scale(1)}50%{opacity:1;transform:scale(1.045)}}
+.boot-title{font-size:26px;font-weight:600;letter-spacing:.34em;color:#eaf3ff;margin-bottom:8px;padding-left:.34em}
+.boot-sub{font-size:12px;color:#6f88a8;letter-spacing:.16em;text-transform:uppercase;margin-bottom:34px}
+.boot-status{font-size:12.5px;color:#8fb2d6;min-height:18px;margin-bottom:14px;font-variant-numeric:tabular-nums}
+.boot-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.09);overflow:hidden}
+.boot-bar-fill{height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,#2b7de0,#5ab0ff);transition:width .45s ease}
+
+/* DESKTOP */
+#desktop{position:fixed;inset:0;overflow:hidden}
+#wallpaper{position:absolute;inset:0;background:radial-gradient(circle at 22% 26%,rgba(58,120,255,.42),transparent 52%),radial-gradient(circle at 78% 74%,rgba(150,72,255,.34),transparent 52%),radial-gradient(circle at 52% 50%,rgba(0,170,255,.18),transparent 62%),linear-gradient(140deg,#081124 0%,#101d38 45%,#0a1428 100%)}
+#wallpaper::after{content:'Think before you click';position:absolute;right:26px;bottom:66px;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:rgba(255,255,255,.14);font-weight:500;pointer-events:none}
+#desktop-icons{position:absolute;top:16px;left:14px;display:flex;flex-direction:column;gap:4px;width:96px;z-index:10}
+.desktop-icon{display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 4px;border-radius:6px;cursor:pointer;transition:background .12s;border:1px solid transparent}
+.desktop-icon:hover{background:rgba(255,255,255,.13)}
+.desktop-icon.selected{background:rgba(0,103,192,.32);border-color:rgba(77,163,255,.5)}
+.desktop-icon .tile{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.desktop-icon .tile svg{width:24px;height:24px}
+.desktop-icon .label{font-size:11.5px;color:#fff;text-align:center;line-height:1.25;text-shadow:0 1px 4px rgba(0,0,0,.85);word-break:break-word}
+
+/* LOCK WIDGET */
+#lock-widget{position:absolute;right:22px;top:50%;transform:translateY(-50%);width:84px;padding:14px 8px 16px;background:rgba(10,16,28,.58);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.14);border-radius:18px;z-index:200;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:0 12px 40px rgba(0,0,0,.42)}
+.lw-title{font-size:9px;letter-spacing:.16em;color:rgba(255,255,255,.5);text-transform:uppercase;font-weight:600}
+.lw-counter{font-size:17px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.lw-counter span{font-size:11px;color:rgba(255,255,255,.45)}
+.lw-best{font-size:10px;color:rgba(255,255,255,.5);font-weight:500}
+.lw-locks{display:flex;flex-direction:column;gap:6px;width:100%;align-items:center}
+.lw-lock{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.28);transition:all .45s cubic-bezier(.34,1.56,.64,1)}
+.lw-lock svg{width:22px;height:22px}
+.lw-lock.open{color:#4ade80;background:rgba(74,222,128,.13);border-color:rgba(74,222,128,.4);box-shadow:0 0 18px rgba(74,222,128,.35);animation:lockPop .55s cubic-bezier(.34,1.56,.64,1)}
+@keyframes lockPop{0%{transform:scale(.7) rotate(-14deg)}60%{transform:scale(1.16) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+.lw-progress{width:100%;height:3px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+.lw-progress-fill{height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width .5s ease}
+
+/* TASKBAR */
+#taskbar{position:fixed;left:0;right:0;bottom:0;height:48px;z-index:5000;background:rgba(243,243,243,.84);-webkit-backdrop-filter:blur(34px) saturate(160%);backdrop-filter:blur(34px) saturate(160%);border-top:1px solid rgba(255,255,255,.55);display:flex;align-items:center;box-shadow:0 -2px 20px rgba(0,0,0,.18)}
+#taskbar-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px}
+.tb-btn{width:40px;height:40px;border-radius:7px;display:grid;place-items:center;color:#1a1a1a;transition:background .12s;position:relative}
+.tb-btn:hover{background:rgba(0,0,0,.07)}
+.tb-btn:active{transform:scale(.93)}
+.tb-btn.active::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:16px;height:3px;border-radius:2px;background:var(--accent)}
+.tb-btn svg{width:21px;height:21px}
+.tb-btn .tb-app-icon{width:21px;height:21px;display:grid;place-items:center}
+.tb-btn .tb-app-icon svg{width:21px;height:21px}
+#start-btn{width:42px;height:42px}
+#start-btn:hover{background:rgba(0,0,0,.07)}
+#start-btn svg{width:20px;height:20px}
+#system-tray{margin-left:auto;display:flex;align-items:center;gap:2px;padding-right:6px;height:100%}
+.tray-btn{height:32px;border-radius:6px;display:flex;align-items:center;gap:6px;padding:0 9px;color:#1a1a1a;transition:background .12s;font-size:12px;position:relative}
+.tray-btn:hover{background:rgba(0,0,0,.07)}
+.tray-btn svg{width:16px;height:16px}
+.tray-btn.active{background:rgba(0,103,192,.12);color:var(--accent)}
+#tray-clock{height:32px;border-radius:6px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:0 10px;font-size:11.5px;line-height:1.32;transition:background .12s;font-variant-numeric:tabular-nums;cursor:pointer}
+#tray-clock:hover{background:rgba(0,0,0,.07)}
+#tray-clock .t2{color:var(--text-2);font-size:10.5px}
+#tray-timer{height:32px;border-radius:16px;display:flex;align-items:center;gap:6px;padding:0 12px;color:#1a1a1a;font-size:12.5px;font-variant-numeric:tabular-nums;font-weight:600;transition:background .12s,color .25s;letter-spacing:.02em;border:1px solid transparent;cursor:pointer}
+#tray-timer:hover{background:rgba(0,0,0,.07)}
+#tray-timer svg{width:14px;height:14px}
+#tray-timer.danger{color:var(--danger);animation:timerPulse 1s ease-in-out infinite;border-color:rgba(196,43,28,.3);background:rgba(196,43,28,.06)}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.55}}
+#tray-hint{color:#b26b00}
+#tray-hint:hover{background:rgba(178,107,0,.12)}
+#tray-hint.disabled{color:var(--text-3);opacity:.55}
+.bell-badge{position:absolute;top:1px;right:1px;min-width:15px;height:15px;border-radius:8px;background:var(--danger);color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center;padding:0 4px;line-height:1;border:1.5px solid #f3f3f3}
+
+/* START MENU */
+#start-menu{position:fixed;bottom:58px;left:50%;transform:translateX(-50%);width:492px;max-height:calc(100vh - 90px);z-index:6000;background:rgba(243,243,243,.93);-webkit-backdrop-filter:blur(38px) saturate(170%);backdrop-filter:blur(38px) saturate(170%);border:1px solid rgba(0,0,0,.1);border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.42);padding:22px 26px 16px;display:flex;flex-direction:column;animation:startIn .18s cubic-bezier(.2,.9,.3,1)}
+@keyframes startIn{from{opacity:0;transform:translateX(-50%) translateY(14px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.sm-search{display:flex;align-items:center;gap:8px;height:34px;background:#fff;border:1px solid #dcdcdc;border-radius:17px;padding:0 13px;margin-bottom:16px;color:var(--text-3);font-size:12.5px;transition:border-color .12s}
+.sm-search:focus-within{border-color:var(--accent)}
+.sm-search svg{width:15px;height:15px;flex:none}
+.sm-search input{flex:1;border:none;outline:none;background:transparent;font-size:12.5px;color:var(--text)}
+.sm-section-label{font-size:11.5px;font-weight:600;color:var(--text-3);margin-bottom:8px;margin-top:6px}
+.sm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.sm-app{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 4px;border-radius:7px;transition:background .12s}
+.sm-app:hover{background:rgba(0,0,0,.06)}
+.sm-app .tile{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:#fff}
+.sm-app .tile svg{width:20px;height:20px}
+.sm-app .label{font-size:11px;color:#2b2b2b;text-align:center;line-height:1.2}
+.sm-recommended{display:flex;flex-direction:column;gap:1px;margin-bottom:14px;max-height:200px;overflow-y:auto}
+.sm-rec-item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:6px;transition:background .1s;cursor:pointer;text-align:left;width:100%}
+.sm-rec-item:hover{background:rgba(0,0,0,.06)}
+.sm-rec-icon{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:#fff;flex:none}
+.sm-rec-icon svg{width:16px;height:16px}
+.sm-rec-name{font-size:12px;font-weight:500}
+.sm-rec-sub{font-size:10.5px;color:var(--text-3)}
+.sm-empty{font-size:11.5px;color:var(--text-3);padding:8px 4px}
+.sm-footer{border-top:1px solid rgba(0,0,0,.09);padding-top:12px;display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.sm-user{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:500;color:#1a1a1a}
+.sm-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2b7de0,#7a4dff);display:grid;place-items:center;color:#fff;font-size:12px;font-weight:600}
+.sm-power{width:32px;height:32px;border-radius:6px;display:grid;place-items:center;color:#3b3b3b;transition:background .12s}
+.sm-power:hover{background:rgba(0,0,0,.07)}
+.sm-power svg{width:17px;height:17px}
+
+/* NOTIFICATION CENTER */
+#notif-panel{position:fixed;right:8px;bottom:54px;z-index:6500;width:360px;max-height:480px;display:flex;flex-direction:column;background:rgba(243,243,243,.96);-webkit-backdrop-filter:blur(38px) saturate(170%);backdrop-filter:blur(38px) saturate(170%);border:1px solid rgba(0,0,0,.1);border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.4);animation:startIn .18s cubic-bezier(.2,.9,.3,1)}
+.notif-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:13px;font-weight:600;flex:none}
+.notif-head button{font-size:11px;color:var(--accent);font-weight:600;padding:4px 8px;border-radius:4px}
+.notif-head button:hover{background:rgba(0,103,192,.1)}
+.notif-list{flex:1;overflow-y:auto;padding:6px;min-height:80px}
+.notif-empty{padding:40px 20px;text-align:center;color:var(--text-3);font-size:12px}
+.notif-item{display:flex;gap:10px;padding:10px 12px;border-radius:7px;margin-bottom:3px;transition:background .1s;cursor:pointer}
+.notif-item:hover{background:rgba(0,0,0,.04)}
+.notif-item.unread{background:rgba(0,103,192,.06)}
+.notif-icon{width:18px;height:18px;flex:none;margin-top:1px}
+.notif-icon svg{width:18px;height:18px}
+.notif-icon.ni-info{color:var(--accent)}
+.notif-icon.ni-success{color:var(--success)}
+.notif-icon.ni-error{color:var(--danger)}
+.notif-icon.ni-warn{color:var(--warn)}
+.notif-body{min-width:0;flex:1}
+.notif-title{font-size:12px;font-weight:600;margin-bottom:2px;color:var(--text)}
+.notif-msg{font-size:11.5px;color:var(--text-2);line-height:1.5;word-break:break-word}
+.notif-time{font-size:10px;color:var(--text-3);margin-top:4px}
+
+/* QUICK SETTINGS */
+#quick-settings{position:fixed;right:8px;bottom:56px;z-index:6500;width:340px;background:rgba(243,243,243,.97);-webkit-backdrop-filter:blur(38px) saturate(170%);backdrop-filter:blur(38px) saturate(170%);border:1px solid rgba(0,0,0,.1);border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.4);padding:16px;animation:startIn .18s cubic-bezier(.2,.9,.3,1)}
+.qs-head{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.qs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.qs-tile{display:flex;align-items:center;gap:9px;padding:10px;border-radius:8px;background:#e8e8e8;text-align:left;transition:background .12s,color .12s}
+.qs-tile:hover{background:#ddd}
+.qs-tile.active{background:var(--accent);color:#fff}
+.qs-tile svg{width:18px;height:18px;flex:none;color:var(--text-2)}
+.qs-tile.active svg{color:#fff}
+.qs-name{font-size:11.5px;font-weight:600;line-height:1.2}
+.qs-status{font-size:10px;color:var(--text-3);margin-top:1px}
+.qs-tile.active .qs-status{color:rgba(255,255,255,.8)}
+.qs-slider-row{display:flex;align-items:center;gap:10px;padding:8px 4px;font-size:12px;color:var(--text-2)}
+.qs-slider-row svg{width:16px;height:16px;flex:none;color:var(--text-2)}
+.qs-slider{flex:1;accent-color:var(--accent);cursor:pointer;height:4px}
+.qs-slider-val{font-size:11px;color:var(--text-3);min-width:24px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* CALENDAR PANEL */
+#calendar-panel{position:fixed;right:8px;bottom:56px;z-index:6500;width:320px;background:rgba(243,243,243,.97);-webkit-backdrop-filter:blur(38px) saturate(170%);backdrop-filter:blur(38px) saturate(170%);border:1px solid rgba(0,0,0,.1);border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.4);padding:16px;animation:startIn .18s cubic-bezier(.2,.9,.3,1)}
+.cal-head{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.cal-head span:last-child{font-size:11px;color:var(--text-3);font-weight:400}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:11px}
+.cal-dow{color:var(--text-3);font-weight:600;padding:4px 0;font-size:10px}
+.cal-day{padding:6px 0;border-radius:5px;transition:background .1s;cursor:pointer;color:var(--text-2)}
+.cal-day:hover{background:rgba(0,0,0,.06)}
+.cal-day.today{background:var(--accent);color:#fff;font-weight:600}
+.cal-day.other{color:#c4c4c4}
+.cal-time{text-align:center;font-size:22px;font-weight:600;margin-bottom:14px;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.cal-date{text-align:center;font-size:12px;color:var(--text-3);margin-bottom:14px}
+
+/* WINDOWS */
+#windows-layer{position:absolute;inset:0;pointer-events:none}
+.window{position:absolute;pointer-events:auto;background:var(--win-bg);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(0,0,0,.1);box-shadow:0 18px 60px rgba(0,0,0,.44),0 0 0 1px rgba(0,0,0,.04);animation:winIn .18s cubic-bezier(.2,.9,.3,1);min-width:400px;min-height:280px}
+@keyframes winIn{from{opacity:0;transform:scale(.965) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.window.closing{animation:winOut .13s ease forwards}
+@keyframes winOut{to{opacity:0;transform:scale(.96)}}
+.win-titlebar{height:40px;flex:none;display:flex;align-items:center;padding-left:14px;gap:10px;background:#f3f3f3;border-bottom:1px solid rgba(0,0,0,.05);cursor:default}
+.win-titlebar .win-icon{width:17px;height:17px;display:grid;place-items:center;color:#3b3b3b;flex:none}
+.win-titlebar .win-icon svg{width:17px;height:17px}
+.win-title{font-size:12px;font-weight:600;color:#1a1a1a;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px}
+.win-controls{display:flex;flex:none;align-self:stretch}
+.win-btn{width:46px;display:grid;place-items:center;color:#1a1a1a;transition:background .1s;align-self:stretch}
+.win-btn:hover{background:rgba(0,0,0,.065)}
+.win-btn.close:hover{background:#c42b1c;color:#fff}
+.win-body{flex:1;overflow:hidden;background:var(--win-surface);display:flex;flex-direction:column;min-height:0}
+
+/* TOOLBAR */
+.app-toolbar{height:44px;flex:none;display:flex;align-items:center;gap:6px;padding:0 10px;background:#fbfbfb;border-bottom:1px solid #ebebeb}
+.tool-btn{height:30px;padding:0 11px;border-radius:5px;font-size:12px;display:flex;align-items:center;gap:6px;color:#2b2b2b;transition:background .1s}
+.tool-btn:hover{background:rgba(0,0,0,.06)}
+.tool-btn svg{width:15px;height:15px}
+.tool-btn.primary{background:var(--accent);color:#fff}
+.tool-btn.primary:hover{background:var(--accent-dark)}
+.tool-btn.danger{background:var(--danger);color:#fff}
+.tool-btn.danger:hover{background:#a02015}
+.tool-btn:disabled{opacity:.42;cursor:not-allowed}
+.tool-sep{width:1px;height:20px;background:#e0e0e0;margin:0 3px}
+
+/* MAIL */
+.mail-layout{flex:1;display:flex;min-height:0}
+.mail-list{width:300px;flex:none;border-right:1px solid #ebebeb;overflow-y:auto;background:#fff}
+.mail-item{padding:11px 14px;border-bottom:1px solid #f2f2f2;cursor:pointer;transition:background .1s;position:relative}
+.mail-item:hover{background:#f5f9ff}
+.mail-item.selected{background:var(--accent-light)}
+.mail-item.selected::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.mail-item .mi-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px}
+.mail-item .mi-from{font-size:12.5px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail-item .mi-time{font-size:10.5px;color:var(--text-3);flex:none}
+.mail-item .mi-subject{font-size:12px;color:#3b3b3b;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail-item .mi-preview{font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail-reader{flex:1;overflow-y:auto;padding:22px 26px;min-width:0}
+.mail-reader h2{font-size:17px;font-weight:600;margin-bottom:12px;color:#1a1a1a;line-height:1.35}
+.mail-meta{display:flex;gap:10px;align-items:center;padding-bottom:14px;border-bottom:1px solid #ececec;margin-bottom:18px}
+.mail-avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;font-size:14px;flex:none}
+.mail-meta-txt{font-size:12px;line-height:1.5;min-width:0}
+.mail-meta-txt .m-name{font-weight:600;color:#1a1a1a}
+.mail-meta-txt .m-addr{color:var(--text-3);font-size:11.5px;word-break:break-all}
+.mail-body{font-size:13px;line-height:1.72;color:#2b2b2b}
+.mail-body p{margin-bottom:11px}
+.mail-body a{color:var(--accent);text-decoration:underline;cursor:pointer}
+.mail-empty{flex:1;display:grid;place-items:center;color:#b0b0b0;font-size:13px;text-align:center;padding:30px}
+.mail-empty svg{width:52px;height:52px;margin:0 auto 12px;color:#d8d8d8}
+
+/* CONTEXT MENU */
+#context-menu{position:fixed;z-index:8000;min-width:212px;background:rgba(252,252,252,.97);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border:1px solid rgba(0,0,0,.1);border-radius:7px;box-shadow:0 12px 38px rgba(0,0,0,.28);padding:5px;animation:ctxIn .11s ease}
+@keyframes ctxIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.ctx-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 11px;border-radius:5px;font-size:12.5px;color:#1a1a1a;text-align:left;transition:background .08s}
+.ctx-item:hover{background:var(--accent);color:#fff}
+.ctx-item svg{width:15px;height:15px;flex:none}
+.ctx-sep{height:1px;background:#e6e6e6;margin:4px 7px}
+
+/* PASSWORD GAME */
+.pw-game{flex:1;display:flex;flex-direction:column;padding:18px 20px;gap:14px;overflow-y:auto}
+.pw-hintbar{background:var(--accent-light);border-left:3px solid var(--accent);padding:10px 13px;border-radius:0 6px 6px 0;font-size:12px;color:#0b3f6e;line-height:1.55}
+.pw-pool{min-height:66px;display:flex;flex-wrap:wrap;gap:9px;padding:11px;border-radius:8px;background:#f7f7f7;border:1px dashed #d4d4d4;align-content:flex-start}
+.pw-pool.drag-over{background:#eaf3fd;border-color:var(--accent)}
+.pw-pool:empty::after{content:'Bütün kartlar yerləşdirildi';font-size:11.5px;color:#a8a8a8;margin:auto}
+.pw-card{padding:9px 15px;border-radius:7px;background:#fff;border:1px solid #dcdcdc;font-size:12.5px;font-weight:500;font-family:Consolas,'Cascadia Mono',monospace;color:#1a1a1a;cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,.07);transition:box-shadow .12s,transform .12s,border-color .12s;letter-spacing:.02em}
+.pw-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.13);border-color:#b9b9b9}
+.pw-card:active{cursor:grabbing}
+.pw-card.dragging{opacity:.42;transform:scale(.96)}
+.pw-card.shake{animation:shakeX .48s ease}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.pw-zones{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:170px}
+.pw-zone{border-radius:9px;border:2px dashed #d4d4d4;background:#fafafa;padding:11px;display:flex;flex-direction:column;gap:8px;transition:all .14s;min-height:150px}
+.pw-zone.drag-over{border-color:var(--accent);background:#eaf3fd;transform:scale(1.008)}
+.pw-zone[data-zone="weak"]{border-color:#f0c4c0;background:#fdf6f5}
+.pw-zone[data-zone="strong"]{border-color:#bfe3cd;background:#f5fbf7}
+.pw-zone[data-zone="weak"].drag-over{border-color:var(--danger);background:#fdecea}
+.pw-zone[data-zone="strong"].drag-over{border-color:var(--success);background:#e6f4ec}
+.pw-zone-title{font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;display:flex;align-items:center;gap:7px;padding-bottom:7px;border-bottom:1px solid rgba(0,0,0,.07)}
+.pw-zone[data-zone="weak"] .pw-zone-title{color:var(--danger)}
+.pw-zone[data-zone="strong"] .pw-zone-title{color:var(--success)}
+.pw-zone-title svg{width:14px;height:14px}
+.pw-zone-cards{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;flex:1}
+
+/* BROWSER */
+.browser-chrome{flex:none;background:#f1f1f1;border-bottom:1px solid #dcdcdc}
+.browser-tabs{display:flex;align-items:flex-end;gap:2px;padding:7px 10px 0;background:#e8e8e8}
+.browser-tab{display:flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:8px 8px 0 0;background:#f8f8f8;font-size:11.5px;color:#2b2b2b;max-width:240px;flex:none}
+.browser-tab .tab-fav{width:13px;height:13px;border-radius:3px;background:var(--accent);flex:none}
+.browser-tab .tab-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.browser-nav{display:flex;align-items:center;gap:5px;padding:7px 10px;background:#f8f8f8}
+.bnav-btn{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#4b4b4b;transition:background .1s}
+.bnav-btn:hover{background:rgba(0,0,0,.07)}
+.bnav-btn svg{width:15px;height:15px}
+.address-bar{flex:1;height:30px;border-radius:15px;background:#fff;border:1px solid #dcdcdc;display:flex;align-items:center;gap:8px;padding:0 6px 0 10px;min-width:0;transition:border-color .12s}
+.address-bar:focus-within{border-color:var(--accent)}
+.padlock-btn{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;color:#5c8a3f;flex:none;transition:background .1s}
+.padlock-btn:hover{background:rgba(0,0,0,.07)}
+.padlock-btn svg{width:14px;height:14px}
+.url-text{flex:1;font-size:12px;color:#2b2b2b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Consolas,'Cascadia Mono',monospace}
+.report-site-btn{height:28px;padding:0 13px;border-radius:14px;background:var(--danger);color:#fff;font-size:11.5px;font-weight:600;flex:none;transition:background .12s}
+.report-site-btn:hover{background:#a02015}
+.report-site-btn:disabled{background:#c9c9c9;cursor:not-allowed}
+.browser-content{flex:1;overflow-y:auto;background:#fff;position:relative;transition:opacity .2s}
+.browser-content.refreshing{opacity:.5}
+.browser-statusbar{position:absolute;left:0;bottom:0;background:#f1f1f1;border:1px solid #d0d0d0;border-left:none;border-bottom:none;border-radius:0 5px 0 0;padding:3px 10px;font-size:11px;color:#4b4b4b;font-family:Consolas,'Cascadia Mono',monospace;z-index:5;max-width:80%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fake-bank{padding:34px 40px;max-width:520px;margin:0 auto}
+.fb-logo{display:flex;align-items:center;gap:11px;margin-bottom:26px;padding-bottom:18px;border-bottom:1px solid #eee}
+.fb-logo-mark{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,#0b5c3f,#128a5e);display:grid;place-items:center;color:#fff}
+.fb-logo-mark svg{width:21px;height:21px}
+.fb-logo-name{font-size:17px;font-weight:700;color:#0b5c3f;letter-spacing:.01em}
+.fb-logo-sub{font-size:10.5px;color:var(--text-3);letter-spacing:.1em;text-transform:uppercase}
+.fb-title{font-size:16px;font-weight:600;margin-bottom:6px;color:#1a1a1a}
+.fb-desc{font-size:12px;color:var(--text-3);margin-bottom:20px;line-height:1.6}
+.fb-field{margin-bottom:14px}
+.fb-field label{display:block;font-size:11.5px;font-weight:600;color:#3b3b3b;margin-bottom:6px}
+.fb-field input{width:100%;height:38px;border-radius:7px;border:1px solid #dcdcdc;padding:0 12px;font-size:13px;outline:none;transition:border-color .12s;background:#fdfdfd}
+.fb-field input:focus{border-color:#0b5c3f;background:#fff}
+.fb-submit{width:100%;height:40px;border-radius:7px;background:#0b5c3f;color:#fff;font-size:13px;font-weight:600;margin-top:6px;transition:background .12s}
+.fb-submit:hover{background:#084a32}
+.fb-links{display:flex;justify-content:space-between;margin-top:16px;font-size:11.5px}
+.fb-links a{color:#0b5c3f;text-decoration:none;cursor:pointer}
+.fb-links a:hover{text-decoration:underline}
+.fb-note{margin-top:26px;padding:11px 13px;border-radius:6px;background:#fff8e6;border-left:3px solid #d99a00;font-size:11.5px;color:#6b4a00;line-height:1.6}
+
+/* SETTINGS */
+.settings-layout{flex:1;display:flex;min-height:0}
+.settings-side{width:220px;flex:none;background:#f7f7f7;border-right:1px solid #ebebeb;padding:14px 8px;overflow-y:auto}
+.settings-user{display:flex;align-items:center;gap:10px;padding:9px 10px;margin-bottom:14px}
+.settings-user .su-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2b7de0,#7a4dff);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:600;flex:none}
+.settings-user .su-name{font-size:12.5px;font-weight:600;color:#1a1a1a}
+.settings-user .su-mail{font-size:10.5px;color:var(--text-3)}
+.side-item{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:6px;font-size:12.5px;color:#2b2b2b;width:100%;text-align:left;transition:background .1s;margin-bottom:2px}
+.side-item:hover{background:rgba(0,0,0,.05)}
+.side-item.active{background:#e5e5e5;font-weight:600}
+.side-item svg{width:16px;height:16px;flex:none;color:#4b4b4b}
+.settings-main{flex:1;padding:26px 32px;overflow-y:auto}
+.settings-main h2{font-size:19px;font-weight:600;margin-bottom:6px;color:#1a1a1a}
+.settings-main .sm-sub{font-size:12px;color:var(--text-3);margin-bottom:24px;line-height:1.6}
+.pw-field{margin-bottom:16px;max-width:400px}
+.pw-field label{display:block;font-size:12px;font-weight:600;color:#2b2b2b;margin-bottom:7px}
+.pw-field input{width:100%;height:36px;border-radius:6px;border:1px solid #d4d4d4;padding:0 12px;font-size:13px;outline:none;transition:border-color .12s;background:#fff}
+.pw-field input:focus{border-color:var(--accent)}
+.strength-wrap{max-width:400px;margin-top:4px;margin-bottom:20px}
+.strength-bars{display:flex;gap:5px;margin-bottom:7px}
+.strength-seg{height:5px;flex:1;border-radius:3px;background:#e2e2e2;transition:background .25s}
+.strength-text{font-size:11.5px;color:var(--text-3);font-weight:500}
+.strength-text.s1{color:var(--danger)}
+.strength-text.s2{color:#d97706}
+.strength-text.s3{color:#b8a600}
+.strength-text.s4{color:var(--success)}
+.pw-rules{max-width:400px;margin-bottom:22px;display:flex;flex-direction:column;gap:6px}
+.pw-rule{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-3);transition:color .2s}
+.pw-rule .dot{width:14px;height:14px;border-radius:50%;border:1.5px solid #d4d4d4;flex:none;display:grid;place-items:center;transition:all .2s}
+.pw-rule .dot svg{width:9px;height:9px;opacity:0;transition:opacity .2s;color:#fff}
+.pw-rule.ok{color:var(--success)}
+.pw-rule.ok .dot{background:var(--success);border-color:var(--success)}
+.pw-rule.ok .dot svg{opacity:1}
+.settings-actions{display:flex;gap:10px;max-width:400px}
+.info-table{width:100%;max-width:520px;border-collapse:collapse;font-size:12.5px}
+.info-table td{padding:10px 0;border-bottom:1px solid #f2f2f2;color:#2b2b2b}
+.info-table td:first-child{color:var(--text-3);width:44%}
+.setting-toggle{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #f2f2f2;max-width:520px}
+.setting-toggle-info{flex:1}
+.setting-toggle-label{font-size:12.5px;font-weight:500;color:var(--text)}
+.setting-toggle-desc{font-size:11px;color:var(--text-3);margin-top:2px;line-height:1.5}
+.toggle-switch{width:38px;height:20px;border-radius:10px;background:#c4c4c4;position:relative;transition:background .2s;flex:none;cursor:pointer}
+.toggle-switch::after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-switch.on{background:var(--accent)}
+.toggle-switch.on::after{transform:translateX(18px)}
+
+/* FILE EXPLORER */
+.fe-layout{flex:1;display:flex;flex-direction:column;min-height:0}
+.fe-address{height:36px;flex:none;display:flex;align-items:center;gap:7px;padding:0 12px;background:#fbfbfb;border-bottom:1px solid #ebebeb;font-size:12px;color:#3b3b3b}
+.fe-address .crumb{padding:3px 7px;border-radius:4px;transition:background .1s;cursor:default}
+.fe-address .crumb:hover{background:rgba(0,0,0,.06)}
+.fe-address .crumb.last{font-weight:600}
+.fe-address svg{width:13px;height:13px;color:#9a9a9a}
+.fe-filelist{flex:1;overflow-y:auto;background:#fff}
+.fe-head{display:grid;grid-template-columns:1fr 130px 130px 100px 44px;padding:0 14px;height:30px;align-items:center;background:#fafafa;border-bottom:1px solid #ebebeb;position:sticky;top:0;z-index:2;font-size:11px;font-weight:600;color:#7a7a7a}
+.fe-row{display:grid;grid-template-columns:1fr 130px 130px 100px 44px;padding:0 14px;height:38px;align-items:center;border-bottom:1px solid #f5f5f5;font-size:12.5px;color:#2b2b2b;cursor:pointer;transition:background .1s}
+.fe-row:hover{background:#f5f9ff}
+.fe-row.sel{background:var(--accent-light)}
+.fe-name{display:flex;align-items:center;gap:9px;min-width:0}
+.fe-name span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fe-name svg{width:17px;height:17px;flex:none}
+.fe-check{width:15px;height:15px;border-radius:3px;border:1.5px solid #c4c4c4;flex:none;display:grid;place-items:center;transition:all .12s;background:#fff}
+.fe-check svg{width:10px;height:10px;opacity:0;color:#fff}
+.fe-row.sel .fe-check{background:var(--accent);border-color:var(--accent)}
+.fe-row.sel .fe-check svg{opacity:1}
+.icon-pdf{color:#d1342b}
+.icon-exe{color:#5b7ea8}
+.icon-img{color:#b06bbf}
+.icon-doc{color:#2b579a}
+.icon-msi{color:#6b6b6b}
+.icon-txt{color:#7a7a7a}
+.fe-statusbar{height:26px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;background:#fbfbfb;border-top:1px solid #ebebeb;font-size:11px;color:var(--text-3)}
+.fe-viewmenu{position:absolute;z-index:9000;background:#fcfcfc;border:1px solid rgba(0,0,0,.1);border-radius:7px;box-shadow:0 12px 38px rgba(0,0,0,.28);padding:5px;min-width:224px;animation:ctxIn .11s ease}
+.fe-viewitem{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:5px;font-size:12px;width:100%;text-align:left;transition:background .1s}
+.fe-viewitem:hover{background:rgba(0,0,0,.06)}
+.fe-viewitem .box{width:14px;height:14px;border-radius:3px;border:1.5px solid #b0b0b0;flex:none;display:grid;place-items:center;background:#fff}
+.fe-viewitem.checked .box{background:var(--accent);border-color:var(--accent)}
+.fe-viewitem .box svg{width:9px;height:9px;opacity:0;color:#fff}
+.fe-viewitem.checked .box svg{opacity:1}
+
+/* TOASTS */
+#toast-container{position:fixed;right:18px;bottom:64px;z-index:7500;display:flex;flex-direction:column;gap:9px;align-items:flex-end;pointer-events:none;max-width:340px}
+.toast{pointer-events:auto;width:100%;background:rgba(252,252,252,.97);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border:1px solid rgba(0,0,0,.1);border-radius:9px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:12px 14px;display:flex;gap:11px;animation:toastIn .26s cubic-bezier(.2,.9,.3,1)}
+@keyframes toastIn{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:translateX(0)}}
+.toast.out{animation:toastOut .22s ease forwards}
+@keyframes toastOut{to{opacity:0;transform:translateX(36px)}}
+.toast-icon{width:20px;height:20px;flex:none;margin-top:1px}
+.toast-icon svg{width:20px;height:20px}
+.toast.t-info .toast-icon{color:var(--accent)}
+.toast.t-success .toast-icon{color:var(--success)}
+.toast.t-error .toast-icon{color:var(--danger)}
+.toast.t-warn .toast-icon{color:var(--warn)}
+.toast-body{min-width:0;flex:1}
+.toast-title{font-size:12.5px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.toast-msg{font-size:11.5px;color:var(--text-2);line-height:1.55;word-break:break-word}
+.toast-action{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;color:var(--accent);cursor:pointer}
+.toast-action:hover{text-decoration:underline}
+
+/* MODALS */
+#modal-backdrop{position:fixed;inset:0;z-index:8500;background:rgba(4,10,20,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#modal-box{width:100%;max-width:600px;max-height:86vh;overflow-y:auto;background:#fff;border-radius:12px;box-shadow:0 30px 90px rgba(0,0,0,.55);animation:modalIn .26s cubic-bezier(.2,.9,.3,1)}
+@keyframes modalIn{from{opacity:0;transform:scale(.955) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-head{padding:22px 26px 16px;border-bottom:1px solid #eee;display:flex;align-items:flex-start;gap:13px}
+.modal-head .mh-icon{width:38px;height:38px;border-radius:10px;flex:none;display:grid;place-items:center;background:var(--success-light);color:var(--success)}
+.modal-head .mh-icon svg{width:20px;height:20px}
+.modal-head h3{font-size:16.5px;font-weight:600;color:#1a1a1a;margin-bottom:3px;line-height:1.3}
+.modal-head .mh-sub{font-size:11.5px;color:var(--text-3)}
+.modal-body{padding:20px 26px 24px}
+.debrief-sec{margin-bottom:19px}
+.debrief-sec:last-of-type{margin-bottom:0}
+.debrief-sec h4{font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.debrief-sec h4 svg{width:13px;height:13px}
+.debrief-sec p{font-size:13px;line-height:1.72;color:#3b3b3b}
+.debrief-sec ul{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:2px;counter-reset:dlist}
+.debrief-sec li{font-size:12.5px;line-height:1.6;color:#3b3b3b;padding-left:24px;position:relative}
+.debrief-sec li::before{content:counter(dlist);counter-increment:dlist;position:absolute;left:0;top:1px;width:17px;height:17px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:700;display:grid;place-items:center}
+.modal-foot{padding:16px 26px;border-top:1px solid #eee;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fafafa;border-radius:0 0 12px 12px}
+.modal-score{font-size:12px;color:var(--text-2)}
+.modal-score strong{color:var(--success);font-size:15px;font-weight:700}
+.m-btn{height:36px;padding:0 22px;border-radius:7px;font-size:12.5px;font-weight:600;background:var(--accent);color:#fff;transition:background .12s}
+.m-btn:hover{background:var(--accent-dark)}
+.m-btn.ghost{background:transparent;color:#4b4b4b;border:1px solid #d4d4d4}
+.m-btn.ghost:hover{background:rgba(0,0,0,.05)}
+.m-btn.danger{background:var(--danger)}
+.m-btn.danger:hover{background:#a02015}
+.cert-row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid #f2f2f2;font-size:12.5px}
+.cert-row:last-child{border-bottom:none}
+.cert-row .ck{color:var(--text-3);flex:none}
+.cert-row .cv{color:#1a1a1a;font-weight:500;text-align:right;word-break:break-all}
+.cert-warn{margin-top:16px;padding:12px 14px;border-radius:7px;background:var(--warn-light);border-left:3px solid var(--warn);font-size:12px;color:#6b4a00;line-height:1.65}
+.mode-options{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mode-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:26px 16px;border-radius:12px;border:2px solid #e5e5e5;background:#fafafa;transition:all .15s;cursor:pointer}
+.mode-card:hover{border-color:var(--accent);background:var(--accent-light);transform:translateY(-2px)}
+.mc-icon{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;background:var(--accent-light);color:var(--accent)}
+.mc-icon svg{width:26px;height:26px}
+.mc-name{font-size:15px;font-weight:600}
+.mc-desc{font-size:11.5px;color:var(--text-3);text-align:center}
+
+/* ESCAPE */
+#escape-screen{position:fixed;inset:0;z-index:9500;background:radial-gradient(circle at 50% 30%,#0e2240 0%,#050a14 72%);display:flex;align-items:center;justify-content:center;padding:28px;overflow-y:auto;animation:fadeIn .6s ease}
+#escape-screen.timeup{background:radial-gradient(circle at 50% 30%,#2a0e0e 0%,#0a0505 72%)}
+.esc-inner{width:100%;max-width:660px;text-align:center;padding:20px 0}
+.esc-badge{width:88px;height:88px;margin:0 auto 22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(74,222,128,.32),rgba(74,222,128,.06));border:2px solid rgba(74,222,128,.5);display:grid;place-items:center;color:#4ade80;box-shadow:0 0 60px rgba(74,222,128,.35);animation:escPulse 2.6s ease-in-out infinite}
+#escape-screen.timeup .esc-badge{background:radial-gradient(circle at 35% 30%,rgba(248,113,113,.3),rgba(248,113,113,.05));border-color:rgba(248,113,113,.5);color:#f87171;box-shadow:0 0 60px rgba(248,113,113,.35)}
+.esc-badge svg{width:44px;height:44px}
+@keyframes escPulse{0%,100%{box-shadow:0 0 50px rgba(74,222,128,.3)}50%{box-shadow:0 0 84px rgba(74,222,128,.55)}}
+.esc-title{font-size:33px;font-weight:700;color:#fff;letter-spacing:.02em;margin-bottom:10px}
+.esc-sub{font-size:13.5px;color:#7fa3cc;margin-bottom:32px;line-height:1.7}
+.esc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:28px}
+.esc-stat{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:16px 8px}
+.esc-stat .es-val{font-size:23px;font-weight:700;color:#eaf3ff;margin-bottom:5px;font-variant-numeric:tabular-nums}
+.esc-stat .es-lbl{font-size:10px;color:#6f88a8;letter-spacing:.13em;text-transform:uppercase;font-weight:600}
+.esc-badges-title{font-size:10.5px;color:#6f88a8;letter-spacing:.2em;text-transform:uppercase;font-weight:600;margin-bottom:14px}
+.esc-badges{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:34px}
+.esc-badge-pill{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;background:rgba(77,163,255,.11);border:1px solid rgba(77,163,255,.3);font-size:12px;color:#a8d0ff;font-weight:500}
+.esc-badge-pill svg{width:14px;height:14px;color:#4da3ff}
+.esc-btn{height:44px;padding:0 34px;border-radius:22px;font-size:13.5px;font-weight:600;background:linear-gradient(135deg,#2b7de0,#5ab0ff);color:#fff;box-shadow:0 10px 30px rgba(43,125,224,.4);transition:transform .15s,box-shadow .15s;margin:0 6px}
+.esc-btn:hover{transform:translateY(-2px);box-shadow:0 14px 38px rgba(43,125,224,.55)}
+.esc-btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:#a8d0ff;box-shadow:none}
+.esc-btn.ghost:hover{background:rgba(255,255,255,.08)}
+.esc-note{font-size:11px;color:#4a6280;margin-top:20px;line-height:1.7}
+.app-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;color:var(--text-2)}
+.app-done .ad-icon{width:62px;height:62px;border-radius:50%;background:var(--success-light);color:var(--success);display:grid;place-items:center;margin-bottom:16px}
+.app-done .ad-icon svg{width:30px;height:30px}
+.app-done h3{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:7px}
+.app-done p{font-size:12.5px;line-height:1.65;max-width:340px;color:var(--text-3)}
+
+@media (max-width:1100px){
+  #lock-widget{transform:translateY(-50%) scale(.88);right:8px}
+  .window{min-width:340px}
+  #notif-panel,#quick-settings,#calendar-panel{width:320px}
+}
+</style>
+</head>
+<body>
+
+<div id="boot-screen">
+  <div class="boot-inner">
+    <div class="boot-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5z"/>
+        <path d="M12 8v4"/>
+        <circle cx="12" cy="15.6" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <div class="boot-title">CYBERLOCK</div>
+    <div class="boot-sub">Quarantine Room</div>
+    <div class="boot-status" id="boot-status">Sistem yoxlanılır...</div>
+    <div class="boot-bar"><div class="boot-bar-fill" id="boot-bar-fill"></div></div>
+  </div>
+</div>
+
+<div id="desktop" class="hidden">
+  <div id="wallpaper"></div>
+  <div id="desktop-icons"></div>
+  <div id="lock-widget"></div>
+  <div id="windows-layer"></div>
+  <div id="toast-container"></div>
+  <div id="start-menu" class="hidden"></div>
+  <div id="context-menu" class="hidden"></div>
+  <div id="notif-panel" class="hidden"></div>
+  <div id="taskbar"></div>
+</div>
+
+<div id="modal-backdrop" class="hidden"><div id="modal-box"></div></div>
+<div id="escape-screen" class="hidden"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ============ SVG ICONS ============ */
+const S = (p, extra) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ` +
+  `stroke-linecap="round" stroke-linejoin="round" ${extra || ''}>${p}</svg>`;
+
+const ICONS = {
+  mail:      S('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 7l10 7 10-7"/>'),
+  browser:   S('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 3.2 2.5 14.8 0 18"/><path d="M12 3c-2.5 3.2-2.5 14.8 0 18"/>'),
+  files:     S('<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>'),
+  settings:  S('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>'),
+  security:  S('<path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5z"/><path d="M8.8 11.8l2.2 2.2 4.2-4.2"/>'),
+  recycle:   S('<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/>'),
+  lock:      S('<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>'),
+  unlock:    S('<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 017-2.65"/>'),
+  search:    S('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>'),
+  hint:      S('<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.5.4.8 1 .9 1.6l.1.6h5.2l.1-.6c.1-.6.4-1.2.9-1.6A6 6 0 0012 3z"/>'),
+  bell:      S('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),
+  wifi:      S('<path d="M2 8.5a16 16 0 0120 0"/><path d="M5.5 12a11 11 0 0113 0"/><path d="M9 15.5a6 6 0 016 0"/><circle cx="12" cy="19" r="1"/>'),
+  volume:    S('<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7"/>'),
+  bluetooth: S('<path d="M7 7l10 10-5 4V3l5 4L7 17"/>'),
+  plane:     S('<path d="M17.8 19.2L16 11l3.5-3.5a2.1 2.1 0 00-3-3L13 8 4.8 6.2a1 1 0 00-.9 1.7L11 12l-3 3-2-1-2 2 3 1 1 3 2-2-1-2 3-3 4.1 7.1a1 1 0 001.7-.9z"/>'),
+  moon:      S('<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>'),
+  sun:       S('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>'),
+  clock:     S('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  chevronR:  S('<path d="M9 6l6 6-6 6"/>'),
+  chevronD:  S('<path d="M6 9l6 6 6-6"/>'),
+  back:      S('<path d="M15 6l-6 6 6 6"/>'),
+  forward:   S('<path d="M9 6l6 6-6 6"/>'),
+  refresh:   S('<path d="M20 11a8 8 0 10-2.4 6.4"/><path d="M20 4v7h-7"/>'),
+  check:     S('<path d="M4 12.5l5 5L20 6.5"/>'),
+  shieldOk:  S('<path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5z"/><path d="M8.8 11.8l2.2 2.2 4.2-4.2"/>'),
+  info:      S('<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor" stroke="none"/>'),
+  alert:     S('<path d="M12 3.2L22 20.4H2z"/><path d="M12 9.6v4.6"/><circle cx="12" cy="17.4" r=".9" fill="currentColor" stroke="none"/>'),
+  xcircle:   S('<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>'),
+  trophy:    S('<path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 000 5H8"/><path d="M16 6h2.5a2.5 2.5 0 010 5H16"/><path d="M12 13v4"/><path d="M8.5 20.5h7l-.7-3.5h-5.6z"/>'),
+  key:       S('<circle cx="8" cy="15" r="4"/><path d="M11 12l8-8"/><path d="M16.5 6.5l2 2"/><path d="M19 4l2 2"/>'),
+  file:      S('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/>'),
+  folderNew: S('<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M12 12v6M9 15h6"/>'),
+  pdf:       S('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 16.5v-4h1.2a1.2 1.2 0 010 2.4H8.5"/><path d="M13 16.5v-4h1a2 2 0 010 4h-1z"/>'),
+  exe:       S('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7.5 13.5l2 2 4-4"/>'),
+  image:     S('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/>'),
+  doc:       S('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h5"/>'),
+  msi:       S('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 15V9l4 3 4-3v6"/>'),
+  txt:       S('<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 16.5h7"/>'),
+  power:     S('<path d="M12 3v9"/><path d="M6.6 6.6a8 8 0 1010.8 0"/>'),
+  bank:      S('<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/>'),
+  eye:       S('<path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/>'),
+  list:      S('<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1" fill="currentColor" stroke="none"/>'),
+  zap:       S('<path d="M13 2L4.5 13.5H11L10 22l8.5-11.5H12z"/>'),
+  cpu:       S('<rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>'),
+  globe:     S('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 3.2 2.5 14.8 0 18"/><path d="M12 3c-2.5 3.2-2.5 14.8 0 18"/>'),
+  speaker:   S('<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7"/><path d="M19 6a9 9 0 010 12"/>'),
+  shield:    S('<path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5z"/>')
+};
+
+const ICON_CLOSE = '<svg viewBox="0 0 10 10" width="10" height="10"><path d="M0 0l10 10M10 0L0 10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>';
+const ICON_MIN   = '<svg viewBox="0 0 10 10" width="10" height="10"><path d="M0 5h10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>';
+const ICON_MAX   = '<svg viewBox="0 0 10 10" width="10" height="10"><rect x="0.6" y="0.6" width="8.8" height="8.8" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>';
+const ICON_WIN   = '<svg viewBox="0 0 24 24" width="20" height="20" fill="#0067c0"><rect x="2" y="2" width="9" height="9" rx="1.1"/><rect x="13" y="2" width="9" height="9" rx="1.1"/><rect x="2" y="13" width="9" height="9" rx="1.1"/><rect x="13" y="13" width="9" height="9" rx="1.1"/></svg>';
+
+/* ============ APPS & TASKS ============ */
+const APPS = [
+  { id:'mail',     name:'Mail',            icon:'mail',     color:'#0078d4', grad:'linear-gradient(135deg,#0a84ff,#0067c0)', taskId:'mail'     },
+  { id:'security', name:'Security Center', icon:'security', color:'#0f7b3f', grad:'linear-gradient(135deg,#17b26a,#0b6b36)', taskId:'password' },
+  { id:'browser',  name:'Browser',         icon:'browser',  color:'#0f7b8a', grad:'linear-gradient(135deg,#22b8cf,#0b6b7a)', taskId:'browser'  },
+  { id:'settings', name:'Settings',        icon:'settings', color:'#5b6678', grad:'linear-gradient(135deg,#8794a8,#4a5568)', taskId:'settings' },
+  { id:'files',    name:'File Explorer',   icon:'files',    color:'#c98a00', grad:'linear-gradient(135deg,#f2b544,#b8790a)', taskId:'files'    }
+];
+const APP_BY_ID = {};
+APPS.forEach(a => APP_BY_ID[a.id] = a);
+
+const TASKS = {
+  mail: {
+    id:'mail', title:'Saxta E-mail', lockIndex:0, points:100,
+    wrongNote:'Bu mesaj etibarlı görünür. Phishing e-mailləri adətən saxta göndərən ünvanı, təcili dil və şübhəli linklərlə xarakterizə olunur. Göndərənin domenini hərf-hərf yoxlayın.',
+    hints:[
+      'Göndərənin e-mail ünvanını hərf-hərf oxu. Domenin adı rəsmi şirkətin domeni ilə tam eynidirmi?',
+      'Mesajdakı linkin üzərinə hover et. Gördüyün ünvanla mətn arasında uyğunsuzluq varmı?',
+      'Təcili hərəkət tələb edən ("24 saat ərzində bağlanacaq") mesajlar phishing-in klassik əlamətidir. Göndərən ünvanında "paypa1" yazılıb — "l" hərfi "1" rəqəmi ilə əvəz olunub.'
+    ],
+    debrief: {
+      what:'Göndərən ünvanındakı "paypa1-secure.com" — "paypal" sözünün "l" hərfi "1" rəqəmi ilə dəyişdirilmiş saxta domendir. Mesaj təcili hərəkət tələb edir və link rəsmi olmayan "verify-account.xyz" domeninə yönəldir.',
+      why:'Kiberhücumların təxminən 90%-i phishing e-maili ilə başlayır. Bir yanlış klik korporativ şəbəkəyə zərər verə bilər.',
+      how:[
+        'Göndərənin domenini hərf-hərf yoxla — "0" və "O", "1" və "l", tire və nöqtə fərqlərinə diqqət et.',
+        'Linkin üzərinə hover et və status barda görünən real ünvanı oxu.',
+        'Təcili dil, təhdid və ya "dərhal tədbir gör" çağırışları qırmızı bayraqdır.',
+        'Heç vaxt e-maildəki linkdən daxil olma — rəsmi saytı brauzerə özün yaz.'
+      ]
+    }
+  },
+  password: {
+    id:'password', title:'Şifrə Gücü', lockIndex:1, points:100,
+    wrongNote:'Bəzi kartlar zəif görünməyə bilər. Güclü şifrə təsadüfi və ya passphrase əsaslı olmalı, lüğət hücumuna davamlı olmalıdır. "P@ssw0rd!" kimi əvəzləmələr lüğət hücumuna davamlı deyil.',
+    hints:[
+      'Şifrənin uzunluğu və tərkibi barədə düşün. İnsanların ən çox istifadə etdiyi şifrələr siyahısını xatırla.',
+      '"P@ssw0rd!" uzun və simvollu görünür — amma bu, sadəcə "password" sözünün hərf əvəzləməsidir. Lüğət hücumu bunu saniyələr içində tapır.',
+      'Zəif səbətə düşməlidir: 123456, P@ssw0rd!, qwerty, BlueSky2024. Güclü səbətə: Tr7#kL9$mQ2x və K9!vR2#pLm7@.'
+    ],
+    debrief: {
+      what:'"P@ssw0rd!" uzun və simvollu görünməsinə baxmayaraq "password" sözünün əvəzlənməsidir və lüğət hücumuna davamlı deyil. Əsl güclü şifrələr təsadüfi və ya passphrase əsaslıdır.',
+      why:'Hesab oğurluqlarının 80%-dən çoxu zəif və ya təkrar istifadə olunan şifrələrlə bağlıdır.',
+      how:['Minimum 12 simvol — uzunluq mürəkkəblikdən daha vacibdir.','Passphrase istifadə et: 4-5 əlaqəsiz söz (məsələn "dəniz-çəyirtkə-27-bakı").','Hər hesab üçün unikal şifrə — bir şifrə sızsa, digərləri qorunsun.','Şifrə meneceri və 2FA (iki faktorlu autentifikasiya) istifadə et.']
+    }
+  },
+  browser: {
+    id:'browser', title:'Phishing Linki', lockIndex:2, points:100,
+    wrongNote:'Sayt rəsmi görünə bilər və kilid ikonu görünə bilər. Amma kilid yalnız şifrələməni göstərir, saytın etibarlılığını yox. Domeni diqqətlə yoxlayın.',
+    hints:['Ünvan çubuğundakı domenə bax: bu, bankın rəsmi domenidirmi? ".click" uzantısı nədir?','Kilid (padlock) ikonuna klik et — sertifikat paneli açılacaq. Sertifikatın kimə verildiyini oxu.','Səhifədəki "Şifrəmi unutdum" linkinin üzərinə hover et — status barda tamamilə fərqli bir IP ünvanı görünəcək. Bu, saxta səhifənin ən güclü sübutudur.'],
+    debrief: {
+      what:'Səhifə HTTPS ilə açılsa da, domen "bank-az.click" — rəsmi bank domeni deyil. Kilid ikonu yalnız şifrələməni göstərir, saytın etibarlılığını yox.',
+      why:'Fişinq saytlarının 80%-i etibarlı SSL sertifikatına malikdir. "Yaşıl kilid = təhlükəsiz" yanlış təsəvvürdür.',
+      how:['Domeni diqqətlə oxu: "bank-az.com" və "bank-az.click" tamamilə fərqli saytlardır.','Linkin üzərinə hover edib status bardakı real ünvanı yoxla.','Şübhəli halda ünvanı brauzerə əl ilə yaz, linkdən istifadə etmə.','Şifrəni yalnız yazdığın və yoxladığın ünvanda daxil et.']
+    }
+  },
+  settings: {
+    id:'settings', title:'Şifrə Dəyişmə', lockIndex:3, points:100,
+    wrongNote:'Güclü şifrə üçün minimum 12 simvol, böyük/kiçik hərf, rəqəm və simvol tələb olunur.',
+    hints:['Güclü şifrə üçün minimum uzunluq tələbini yadda saxla — 12 simvol.','Böyük hərf, kiçik hərf, rəqəm və simvol birlikdə istifadə olunmalıdır (ən azı 3 kateqoriya).','Məsələn: "Q7#mXr2$vLp9" — 12 simvol, 4 kateqoriya.'],
+    debrief: {
+      what:'Güclü şifrə 12+ simvol, böyük/kiçik hərf, rəqəm və simvol kombinasiyası tələb edir.',
+      why:'Hər əlavə simvol brute-force hücumunun müddətini eksponent olaraq artırır.',
+      how:['12-16 simvoldan ibarət unikal şifrə seç.','Şifrə menecerindən istifadə et.','İki faktorlu autentifikasiyanı (2FA) aktivləşdir.','Şifrəni heç vaxt kağıza, chat-a və ya e-maila yazma.']
+    }
+  },
+  files: {
+    id:'files', title:'Şübhəli Fayl', lockIndex:4, points:100,
+    wrongNote:'İkiqat uzantılı fayllar (.jpg.exe) və naməlum mənbədən gələn quraşdırıcılar (.msi) əsas risk mənbəyidir.',
+    hints:['Fayl adlarını diqqətlə oxu. Bəzi fayllarda iki nöqtə (uzantı) var.','File Explorer-da "Görünüş" menyusundan "Fayl uzantılarını göstər" seçimini aktivləşdir.','İkiqat uzantı "photo.jpg.exe" — şəkil kimi görünən icra olunan fayldır. "free_vpn_installer.msi" isə naməlum mənbədən gəlir.'],
+    debrief: {
+      what:'"photo.jpg.exe" ikiqat uzantılı fayldır — şəkil kimi görünür, amma əslində icra olunan proqramdır.',
+      why:'Zərərli proqramların böyük hissəsi istifadəçinin özünün işə saldığı fayllarla yayılır.',
+      how:['File Explorer-da "Fayl uzantılarını göstər" seçimini aktiv saxla.','İkiqat uzantıya (".jpg.exe", ".pdf.exe") həmişə diqqət et.','Naməlum mənbədən gələn .exe, .msi, .bat, .scr fayllarını açma.','Faylı açmadan əvvəl antivirusla yoxla.']
+    }
+  }
+};
+const TASK_ORDER = ['mail','password','browser','settings','files'];
+
+/* ============ STATE ============ */
+const SAVE_KEY = 'cyberlock_save_v2';
+const DEFAULT_DURATION = 10 * 60 * 1000;
+const SPEEDRUN_DURATION = 4 * 60 * 1000;
+
+const state = {
+  score: 0, bestScore: 0,
+  solved: {}, hintsUsed: {}, wrong: {}, firstTry: {},
+  consecutive: 0, totalWrong: 0, activeTask: null,
+  taskStart: {},
+  mode: 'normal',
+  timerDuration: DEFAULT_DURATION,
+  timerEnd: null, timerRemaining: DEFAULT_DURATION,
+  timerStarted: false, timerInterval: null,
+  escaped: false, recentApps: [], lang: 'az',
+  currentSettingsPanel: 'accounts',
+  settingsToggles: { wifi: true, bluetooth: false, plane: false, night: false },
+  volume: 65, brightness: 80
+};
+
+const SOLVED_COUNT = () => Object.keys(state.solved).length;
+const el = (tag, cls, html) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html !== undefined) n.innerHTML = html;
+  return n;
+};
+const pad2 = n => n < 10 ? '0' + n : '' + n;
+const fmtTime = ms => { const t = Math.max(0, Math.floor(ms / 1000)); return pad2(Math.floor(t / 60)) + ':' + pad2(t % 60); };
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ============ EVENT BUS ============ */
+const events = {
+  _l: {},
+  on(name, fn){ (this._l[name] = this._l[name] || []).push(fn); return fn; },
+  off(name, fn){ const arr = this._l[name]; if (arr) this._l[name] = arr.filter(f => f !== fn); },
+  emit(name, data){ (this._l[name] || []).forEach(fn => { try { fn(data); } catch (e) { console.error(e); } }); }
+};
+
+/* ============ PERSISTENCE ============ */
+function saveState(){
+  try {
+    const payload = {
+      score: state.score, bestScore: state.bestScore,
+      solved: state.solved, hintsUsed: state.hintsUsed, wrong: state.wrong,
+      firstTry: state.firstTry, consecutive: state.consecutive, totalWrong: state.totalWrong,
+      mode: state.mode, timerDuration: state.timerDuration, timerEnd: state.timerEnd,
+      timerStarted: state.timerStarted, escaped: state.escaped,
+      recentApps: state.recentApps, lang: state.lang,
+      settingsToggles: state.settingsToggles, volume: state.volume, brightness: state.brightness
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+  } catch(e){}
+}
+function loadState(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (d.score !== undefined) state.score = d.score;
+    if (d.bestScore !== undefined) state.bestScore = d.bestScore;
+    if (d.solved) state.solved = d.solved;
+    if (d.hintsUsed) state.hintsUsed = d.hintsUsed;
+    if (d.wrong) state.wrong = d.wrong;
+    if (d.firstTry) state.firstTry = d.firstTry;
+    if (d.consecutive !== undefined) state.consecutive = d.consecutive;
+    if (d.totalWrong !== undefined) state.totalWrong = d.totalWrong;
+    if (d.mode) state.mode = d.mode;
+    if (d.timerDuration) state.timerDuration = d.timerDuration;
+    if (d.timerEnd !== undefined) state.timerEnd = d.timerEnd;
+    if (d.timerStarted !== undefined) state.timerStarted = d.timerStarted;
+    if (d.escaped !== undefined) state.escaped = d.escaped;
+    if (d.recentApps) state.recentApps = d.recentApps;
+    if (d.lang) state.lang = d.lang;
+    if (d.settingsToggles) state.settingsToggles = d.settingsToggles;
+    if (d.volume !== undefined) state.volume = d.volume;
+    if (d.brightness !== undefined) state.brightness = d.brightness;
+    return true;
+  } catch(e){ return false; }
+}
+function clearSave(){ try { localStorage.removeItem(SAVE_KEY); } catch(e){} }
+
+/* ============ NOTIFICATIONS ============ */
+const N_KEY = 'cyberlock_notifs_v1';
+const TOAST_ICONS = { info: ICONS.info, success: ICONS.check, error: ICONS.xcircle, warn: ICONS.alert };
+const notifications = {
+  items: [],
+  init(){
+    try {
+      const raw = localStorage.getItem(N_KEY);
+      if (raw) this.items = JSON.parse(raw) || [];
+    } catch(e){ this.items = []; }
+  },
+  persist(){
+    try {
+      /* keep only 30 items */
+      if (this.items.length > 30) this.items.length = 30;
+      localStorage.setItem(N_KEY, JSON.stringify(this.items));
+    } catch(e){}
+  },
+  add(title, message, type){
+    const n = { id: 'n' + Date.now() + Math.random().toString(36).slice(2,6), title, message, type: type || 'info', time: Date.now(), read: false };
+    this.items.unshift(n);
+    this.persist(); this.render(); this.updateBadge();
+    return n;
+  },
+  clear(){ this.items = []; this.persist(); this.render(); this.updateBadge(); },
+  markAllRead(){ this.items.forEach(n => n.read = true); this.persist(); this.updateBadge(); this.render(); },
+  unreadCount(){ return this.items.filter(n => !n.read).length; },
+  updateBadge(){
+    const badge = document.getElementById('bell-badge');
+    if (!badge) return;
+    const c = this.unreadCount();
+    if (c > 0) { badge.textContent = c > 9 ? '9+' : String(c); badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  },
+  render(){
+    const list = document.getElementById('notif-list');
+    if (!list) return;
+    if (this.items.length === 0) { list.innerHTML = '<div class="notif-empty">Bildiriş yoxdur</div>'; return; }
+    list.innerHTML = '';
+    const self = this;
+    this.items.forEach(n => {
+      const item = el('div', 'notif-item' + (n.read ? '' : ' unread'));
+      const t = new Date(n.time);
+      const timeStr = pad2(t.getHours()) + ':' + pad2(t.getMinutes());
+      item.innerHTML =
+        '<div class="notif-icon ni-' + n.type + '">' + (TOAST_ICONS[n.type] || ICONS.info) + '</div>' +
+        '<div class="notif-body">' +
+          '<div class="notif-title">' + n.title + '</div>' +
+          '<div class="notif-msg">' + n.message + '</div>' +
+          '<div class="notif-time">' + timeStr + '</div>' +
+        '</div>';
+      item.addEventListener('click', () => { n.read = true; self.persist(); self.updateBadge(); item.classList.remove('unread'); });
+      list.appendChild(item);
+    });
+  }
+};
+
+function toast(title, message, type, duration, silent, actionLabel, actionFn){
+  type = type || 'info'; duration = duration || 6000;
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const t = el('div', 'toast t-' + type);
+  t.innerHTML =
+    '<div class="toast-icon">' + (TOAST_ICONS[type] || ICONS.info) + '</div>' +
+    '<div class="toast-body">' +
+      '<div class="toast-title">' + title + '</div>' +
+      '<div class="toast-msg">' + message + '</div>' +
+      (actionLabel ? '<span class="toast-action">' + actionLabel + '</span>' : '') +
+    '</div>';
+  if (actionFn && actionLabel) {
+    t.querySelector('.toast-action').addEventListener('click', function(e){
+      e.stopPropagation(); actionFn(); t.remove();
+    });
+  }
+  container.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 240); }, duration);
+  if (!silent) notifications.add(title, message, type);
+}
+
+/* ============ CONTEXT MENU ============ */
+let ctxMenuEl = null;
+function showContextMenu(x, y, items){
+  hideContextMenu();
+  const m = document.getElementById('context-menu');
+  m.innerHTML = '';
+  items.forEach(it => {
+    if (it.sep) { m.appendChild(el('div', 'ctx-sep')); return; }
+    const b = el('button', 'ctx-item');
+    b.innerHTML = (it.icon ? it.icon : '') + '<span>' + it.label + '</span>';
+    b.addEventListener('click', e => { e.stopPropagation(); hideContextMenu(); it.action(); });
+    m.appendChild(b);
+  });
+  m.classList.remove('hidden');
+  const rect = m.getBoundingClientRect();
+  let px = x, py = y;
+  if (px + rect.width > window.innerWidth - 8) px = window.innerWidth - rect.width - 8;
+  if (py + rect.height > window.innerHeight - 8) py = window.innerHeight - rect.height - 8;
+  m.style.left = Math.max(4, px) + 'px'; m.style.top = Math.max(4, py) + 'px';
+  ctxMenuEl = m;
+}
+function hideContextMenu(){ const m = document.getElementById('context-menu'); if (m) m.classList.add('hidden'); ctxMenuEl = null; }
+document.addEventListener('click', e => { if (ctxMenuEl && !ctxMenuEl.contains(e.target)) hideContextMenu(); });
+document.addEventListener('contextmenu', e => { if (!e.target.closest('.mail-item')) hideContextMenu(); });
+
+/* ============ MODAL ============ */
+function showModal(innerHTML, opts){
+  opts = opts || {};
+  const backdrop = document.getElementById('modal-backdrop');
+  const box = document.getElementById('modal-box');
+  box.innerHTML = innerHTML;
+  backdrop.classList.remove('hidden');
+  backdrop.onclick = e => { if (e.target === backdrop && opts.dismissable !== false) closeModal(); };
+}
+function closeModal(){ document.getElementById('modal-backdrop').classList.add('hidden'); }
+
+/* ============ TIMER ============ */
+function startTimer(){
+  if (state.timerStarted) return;
+  if (state.timerEnd === null) state.timerEnd = Date.now() + state.timerDuration;
+  state.timerStarted = true;
+  state.timerRemaining = Math.max(0, state.timerEnd - Date.now());
+  updateTimerDisplay();
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(tickTimer, 500);
+  tickTimer(); saveState();
+}
+function stopTimer(){ if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; } }
+function tickTimer(){
+  if (!state.timerStarted) return;
+  const rem = Math.max(0, state.timerEnd - Date.now());
+  state.timerRemaining = rem; updateTimerDisplay();
+  if (rem <= 0) { stopTimer(); showEndScreen('timeup'); }
+}
+function updateTimerDisplay(){
+  const text = document.getElementById('timer-text');
+  const pill = document.getElementById('tray-timer');
+  if (!text) return;
+  text.textContent = fmtTime(state.timerRemaining);
+  if (pill) {
+    if (state.timerRemaining <= 60000 && state.timerRemaining > 0 && state.timerStarted && !state.escaped) pill.classList.add('danger');
+    else pill.classList.remove('danger');
+    if (state.timerStarted) pill.classList.remove('hidden');
+  }
+}
+
+/* ============ WINDOW MANAGER ============ */
+let zTop = 1000;
+const openWindows = new Map();
+
+function focusWindow(winEl){
+  winEl.style.zIndex = ++zTop;
+  document.querySelectorAll('.window').forEach(w => w.classList.toggle('focused', w === winEl));
+  const appId = winEl.dataset.appId;
+  const rec = openWindows.get(appId);
+  document.querySelectorAll('.tb-btn[data-app]').forEach(b => { if (rec) b.classList.toggle('active', b.dataset.app === appId && !rec.minimized); });
+  const app = APP_BY_ID[appId];
+  if (app && !state.solved[app.taskId]) {
+    state.activeTask = app.taskId;
+    if (!state.taskStart[app.taskId]) state.taskStart[app.taskId] = Date.now();
+    updateHintButton();
+  }
+}
+
+function openApp(appId){
+  const app = APP_BY_ID[appId];
+  if (!app) return;
+  if (openWindows.has(appId)) {
+    const rec = openWindows.get(appId);
+    if (rec.minimized) { rec.minimized = false; rec.el.style.display = 'flex'; rec.el.classList.remove('closing'); }
+    focusWindow(rec.el); updateHintButton(); return;
+  }
+  if (!state.timerStarted && !state.escaped) startTimer();
+
+  const sizes = { mail:{w:860,h:560}, security:{w:800,h:600}, browser:{w:880,h:600}, settings:{w:820,h:580}, files:{w:880,h:540} };
+  const sz = sizes[appId] || { w:760, h:520 };
+  const win = el('div', 'window');
+  win.dataset.appId = appId;
+  win.style.width = sz.w + 'px';
+  win.style.height = sz.h + 'px';
+  const cascade = (openWindows.size % 6) * 26;
+  let left = Math.max(14, Math.round((window.innerWidth - sz.w) / 2) - 80 + cascade);
+  let top = Math.max(14, Math.round((window.innerHeight - 48 - sz.h) / 2) - 20 + cascade);
+  if (left + sz.w > window.innerWidth - 120) left = Math.max(14, window.innerWidth - sz.w - 120);
+  if (top + sz.h > window.innerHeight - 60) top = Math.max(14, window.innerHeight - sz.h - 60);
+  win.style.left = left + 'px';
+  win.style.top = top + 'px';
+
+  const tb = el('div', 'win-titlebar');
+  tb.innerHTML =
+    '<div class="win-icon">' + ICONS[app.icon] + '</div>' +
+    '<div class="win-title">' + app.name + '</div>' +
+    '<div class="win-controls">' +
+      '<button class="win-btn min" title="Minimuma endir">' + ICON_MIN + '</button>' +
+      '<button class="win-btn max" title="Maksimuma endir">' + ICON_MAX + '</button>' +
+      '<button class="win-btn close" title="Bağla">' + ICON_CLOSE + '</button>' +
+    '</div>';
+  win.appendChild(tb);
+  const body = el('div', 'win-body');
+  win.appendChild(body);
+  document.getElementById('windows-layer').appendChild(win);
+
+  const rec = { el: win, minimized: false, maximized: false, prevRect: null };
+  openWindows.set(appId, rec);
+
+  let dragging = false, dragOffX = 0, dragOffY = 0;
+  tb.addEventListener('mousedown', e => {
+    if (e.target.closest('.win-btn') || rec.maximized) return;
+    dragging = true; dragOffX = e.clientX - win.offsetLeft; dragOffY = e.clientY - win.offsetTop;
+    document.body.style.cursor = 'move'; e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    let nx = e.clientX - dragOffX, ny = e.clientY - dragOffY;
+    nx = Math.max(-sz.w + 120, Math.min(nx, window.innerWidth - 120));
+    ny = Math.max(0, Math.min(ny, window.innerHeight - 90));
+    win.style.left = nx + 'px'; win.style.top = ny + 'px';
+  });
+  document.addEventListener('mouseup', () => { if (dragging) { dragging = false; document.body.style.cursor = ''; } });
+
+  tb.querySelector('.min').addEventListener('click', e => {
+    e.stopPropagation(); rec.minimized = true; win.style.display = 'none';
+    document.querySelectorAll('.tb-btn[data-app]').forEach(b => b.classList.remove('active'));
+  });
+  tb.querySelector('.max').addEventListener('click', e => {
+    e.stopPropagation();
+    if (!rec.maximized) {
+      rec.prevRect = { left: win.style.left, top: win.style.top, width: win.style.width, height: win.style.height };
+      win.style.left = '0px'; win.style.top = '0px';
+      win.style.width = window.innerWidth + 'px';
+      win.style.height = (window.innerHeight - 48) + 'px';
+      win.style.borderRadius = '0'; rec.maximized = true;
+    } else {
+      win.style.left = rec.prevRect.left; win.style.top = rec.prevRect.top;
+      win.style.width = rec.prevRect.width; win.style.height = rec.prevRect.height;
+      win.style.borderRadius = ''; rec.maximized = false;
+    }
+  });
+  tb.querySelector('.close').addEventListener('click', e => { e.stopPropagation(); closeWindow(appId); });
+  win.addEventListener('mousedown', () => focusWindow(win));
+
+  const renderer = RENDERERS[appId];
+  if (renderer) renderer(body, app);
+
+  focusWindow(win);
+  if (!state.taskStart[app.taskId] && !state.solved[app.taskId]) state.taskStart[app.taskId] = Date.now();
+  state.activeTask = app.taskId;
+  state.recentApps = state.recentApps.filter(id => id !== appId);
+  state.recentApps.unshift(appId);
+  if (state.recentApps.length > 5) state.recentApps.length = 5;
+  saveState(); refreshTaskbar(); updateHintButton();
+}
+
+function closeWindow(appId){
+  const rec = openWindows.get(appId);
+  if (!rec) return;
+  rec.el.classList.add('closing');
+  const node = rec.el;
+  setTimeout(() => node.remove(), 140);
+  openWindows.delete(appId);
+  const app = APP_BY_ID[appId];
+  if (app && !state.solved[app.taskId]) state.taskStart[app.taskId] = null;
+  if (state.activeTask === (app && app.taskId)) state.activeTask = null;
+  refreshTaskbar(); updateHintButton();
+}
+function refreshTaskbar(){
+  document.querySelectorAll('.tb-btn[data-app]').forEach(b => {
+    const rec = openWindows.get(b.dataset.app);
+    b.classList.toggle('active', !!rec && !rec.minimized);
+  });
+}
+
+/* ============ TASK SOLVING ============ */
+function solveTask(taskId){
+  if (state.solved[taskId]) return;
+  const task = TASKS[taskId];
+  if (!task) return;
+  const start = state.taskStart[taskId];
+  const elapsed = start ? (Date.now() - start) : Infinity;
+  const within30s = elapsed <= 30000;
+  const isFirstTry = state.firstTry[taskId] !== false;
+  if (isFirstTry) state.consecutive = (state.consecutive || 0) + 1;
+  else state.consecutive = 0;
+  const streakBonus = state.consecutive >= 3;
+  let points = task.points;
+  if (within30s) points += 20;
+  if (streakBonus) points = Math.round(points * 1.2);
+  state.solved[taskId] = true;
+  state.score += points;
+  state.taskStart[taskId] = null;
+  if (state.score > state.bestScore) state.bestScore = state.score;
+  state.activeTask = null;
+  events.emit('task:solved', { taskId, points, within30s, streakBonus, isFirstTry, consecutive: state.consecutive });
+  saveState(); updateLockWidget(); updateHintButton(); renderTaskbarScore();
+  showDebriefModal(task, points, within30s, streakBonus);
+  if (SOLVED_COUNT() >= TASK_ORDER.length) { stopTimer(); setTimeout(() => showEndScreen('escape'), 700); }
+}
+
+function registerWrong(taskId, reason){
+  if (state.solved[taskId]) return;
+  const task = TASKS[taskId];
+  if (!task) return;
+  state.wrong[taskId] = (state.wrong[taskId] || 0) + 1;
+  state.firstTry[taskId] = false;
+  state.consecutive = 0;
+  state.totalWrong = (state.totalWrong || 0) + 1;
+  let penalty = 0;
+  if (state.totalWrong > 2) penalty = 10;
+  if (penalty > 0) state.score = Math.max(0, state.score - penalty);
+  if (taskId === 'password' && state.wrong[taskId] === 3) {
+    setTimeout(() => toast('İpucu açıldı', '3 səhv cəhddən sonra ipucu avtomatik göstərildi. Zəif şifrələr: 123456, P@ssw0rd!, qwerty, BlueSky2024.', 'warn', 8000), 400);
+  }
+  events.emit('task:wrong', { taskId, reason: reason || 'wrong', penalty, totalWrong: state.totalWrong, wrongCount: state.wrong[taskId] });
+  saveState(); updateHintButton(); renderTaskbarScore();
+  showWrongModal(task, penalty, reason);
+}
+
+function useHint(){
+  const taskId = state.activeTask;
+  if (!taskId) { toast('İpucu', 'Əvvəlcə bir tapşırıq pəncərəsi açın.', 'info', 4000); return; }
+  if (state.solved[taskId]) { toast('İpucu', 'Bu tapşırıq artıq həll olunub.', 'info', 3500); return; }
+  const task = TASKS[taskId];
+  const used = state.hintsUsed[taskId] || 0;
+  if (used >= task.hints.length) { toast('İpucu', 'Bu tapşırıq üçün bütün ipuçları istifadə olundu.', 'info', 4000); return; }
+  const hint = task.hints[used];
+  state.hintsUsed[taskId] = used + 1;
+  state.score = Math.max(0, state.score - 15);
+  events.emit('hint:used', { taskId, index: used, total: task.hints.length, hint });
+  saveState(); renderTaskbarScore();
+  const remaining = task.hints.length - (used + 1);
+  toast('İpucu — ' + task.title, esc(hint) + (remaining > 0
+    ? '<br><br><span style="color:var(--text-3);font-size:10.5px">Daha ' + remaining + ' ipucu var · −15 bal</span>'
+    : '<br><br><span style="color:var(--text-3);font-size:10.5px">Son ipucu · −15 bal</span>'), 'warn', 12000);
+}
+
+function updateHintButton(){
+  const btn = document.getElementById('tray-hint');
+  if (!btn) return;
+  const taskId = state.activeTask;
+  if (!taskId || state.solved[taskId]) {
+    btn.classList.add('disabled');
+    btn.title = taskId && state.solved[taskId] ? 'Tapşırıq həll olunub' : 'İpucu — əvvəlcə bir tətbiq açın';
+  } else {
+    btn.classList.remove('disabled');
+    const used = state.hintsUsed[taskId] || 0;
+    btn.title = 'İpucu: ' + TASKS[taskId].title + ' (' + used + '/' + TASKS[taskId].hints.length + ')';
+  }
+}
+
+function showDebriefModal(task, points, within30s, streakBonus){
+  const d = task.debrief;
+  const how = d.how.map(h => '<li>' + h + '</li>').join('');
+  const bonusBits = [];
+  if (within30s) bonusBits.push('+20 sürət bonusu');
+  if (streakBonus) bonusBits.push('+20% streak bonusu');
+  showModal(
+    '<div class="modal-head">' +
+      '<div class="mh-icon">' + ICONS.shieldOk + '</div>' +
+      '<div><h3>' + task.title + ' — tamamlandı</h3><div class="mh-sub">Debrief · Təhlükəsizlik dərsi</div></div>' +
+    '</div>' +
+    '<div class="modal-body">' +
+      '<div class="debrief-sec"><h4>' + ICONS.info + 'Nə oldu?</h4><p>' + d.what + '</p></div>' +
+      '<div class="debrief-sec"><h4>' + ICONS.alert + 'Niyə vacibdir?</h4><p>' + d.why + '</p></div>' +
+      '<div class="debrief-sec"><h4>' + ICONS.check + 'Necə qorunmalı?</h4><ul>' + how + '</ul></div>' +
+    '</div>' +
+    '<div class="modal-foot">' +
+      '<div class="modal-score">+' + points + ' bal' + (bonusBits.length ? ' <span style="color:var(--text-3);font-size:11px">(' + bonusBits.join(' · ') + ')</span>' : '') + '</div>' +
+      '<button class="m-btn" id="debriefOk">Davam et</button>' +
+    '</div>',
+    { dismissable: false }
+  );
+  document.getElementById('debriefOk').addEventListener('click', closeModal);
+}
+
+function showWrongModal(task, penalty, reason){
+  showModal(
+    '<div class="modal-head">' +
+      '<div class="mh-icon" style="background:var(--danger-light);color:var(--danger)">' + ICONS.alert + '</div>' +
+      '<div><h3>Bu niyə səhv idi?</h3><div class="mh-sub">' + task.title + '</div></div>' +
+    '</div>' +
+    '<div class="modal-body">' +
+      '<div class="debrief-sec"><p>' + (reason ? esc(reason) + '<br><br>' : '') + task.wrongNote + '</p></div>' +
+      (penalty > 0
+        ? '<div class="cert-warn" style="background:var(--danger-light);border-left-color:var(--danger);color:#7a1a12">−' + penalty + ' bal. İlk 2 səhv cəzasızdır, sonrakılar −10 baldır.</div>'
+        : '<div class="cert-warn" style="background:var(--success-light);border-left-color:var(--success);color:#0b4a26">Bu səhv hələ cəzasızdır. Növbəti səhvlər −10 bal olacaq.</div>') +
+    '</div>' +
+    '<div class="modal-foot">' +
+      '<div class="modal-score">Cəmi səhv: <strong style="color:var(--danger)">' + state.totalWrong + '</strong></div>' +
+      '<button class="m-btn" id="wrongOk">Anladım</button>' +
+    '</div>',
+    { dismissable: false }
+  );
+  document.getElementById('wrongOk').addEventListener('click', closeModal);
+}
+
+/* ============ APP RENDERERS ============ */
+const RENDERERS = {};
+function solvedScreen(title, msg){
+  return '<div class="app-done"><div class="ad-icon">' + ICONS.shieldOk + '</div><h3>' + title + '</h3><p>' + msg + '</p></div>';
+}
+
+/* --- MAIL --- */
+const MAIL_DATA = [
+  { id:'m1', from:'IT Dəstək Xidməti', addr:'it-destek@company.az', subject:'Planlaşdırılmış texniki xidmət — 15 mart', time:'09:12', preview:'Hörmətli əməkdaşlar, 15 mart saat 22:00-da...', color:'#0078d4', letter:'I',
+    body:'<p>Hörmətli əməkdaşlar,</p><p>15 mart saat 22:00–23:30 aralığında planlaşdırılmış texniki xidmət aparılacaq. Bu müddət ərzində daxili fayl serveri müvəqqəti əlçatmaz olacaq.</p><p>Zəhmət olmasa vacib sənədlərinizi əvvəlcədən yadda saxlayın.</p><p>Hörmətlə,<br>IT Dəstək Xidməti</p>', phishing:false },
+  { id:'m2', from:'PayPal Secure', addr:'support@paypa1-secure.com', subject:'TƏCİLİ: Hesabınız 24 saat ərzində bağlanacaq', time:'10:47', preview:'Hörmətli müştəri, hesabınızda qeyri-adi aktivlik...', color:'#d1342b', letter:'P',
+    body:'<p>Hörmətli müştəri,</p><p><strong>Hesabınızda qeyri-adi aktivlik aşkar edilmişdir.</strong> Təhlükəsizlik qaydalarına əsasən hesabınız <strong>24 saat ərzində bağlanacaq</strong>.</p><p>Hesabınızı qorumaq üçün dərhal aşağıdakı linkə keçin:</p><p><a data-fake-link="http://paypal.verify-account.xyz/login">http://paypal.verify-account.xyz/secure-login</a></p><p>Diqqətiniz üçün təşəkkür edirik.<br>PayPal Təhlükəsizlik Komandası</p>', phishing:true },
+  { id:'m3', from:'TechNews Azərbaycan', addr:'newsletter@technews.az', subject:'Həftəlik texnologiya icmalı — bu həftə nə oldu?', time:'08:30', preview:'Bu həftənin ən maraqlı texnoloji xəbərləri...', color:'#0f7b8a', letter:'T',
+    body:'<p>Salam,</p><p>Bu həftənin texnologiya icmalı hazırdır: yeni nəsil prosessorlar, bulud xidmətlərində yeniliklər və süni intellekt alətləri barədə qısa icmallar.</p><p>Tam məqaləni saytımızda oxuya bilərsiniz.</p><p>Hörmətlə,<br>TechNews redaksiyası</p>', phishing:false },
+  { id:'m4', from:'İnsan Resursları', addr:'hr@company.az', subject:'Aylıq hesabatların təqdim edilməsi barədə', time:'07:55', preview:'Hörmətli həmkarlar, ayın sonuna qədər...', color:'#7a4dff', letter:'H',
+    body:'<p>Hörmətli həmkarlar,</p><p>Xahiş edirik ayın sonuna qədər aylıq hesabatlarınızı daxili portalda yerləşdirəsiniz.</p><p>Suallarınız olarsa, İnsan Resursları şöbəsi ilə əlaqə saxlayın.</p><p>Hörmətlə,<br>İnsan Resursları şöbəsi</p>', phishing:false }
+];
+
+RENDERERS.mail = function(body){
+  if (state.solved.mail) { body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Saxta e-mail uğurla bildirildi və phishing qeydə alındı.'); return; }
+  let mails = MAIL_DATA.slice();
+  let selectedId = null;
+  const layout = el('div', 'mail-layout');
+  const listEl = el('div', 'mail-list');
+  const readerEl = el('div', 'mail-reader');
+
+  function renderList(){
+    listEl.innerHTML = '';
+    if (mails.length === 0) {
+      listEl.innerHTML = '<div style="padding:24px 16px;text-align:center;color:var(--text-3);font-size:12px">Bütün mesajlar silinib.<br>Tapşırığı tamamlamaq üçün "Yenilə" düyməsindən istifadə edin.</div>';
+      return;
+    }
+    mails.forEach(m => {
+      const item = el('div', 'mail-item' + (selectedId === m.id ? ' selected' : ''));
+      item.innerHTML =
+        '<div class="mi-top"><div class="mi-from">' + m.from + '</div><div class="mi-time">' + m.time + '</div></div>' +
+        '<div class="mi-subject">' + m.subject + '</div>' +
+        '<div class="mi-preview">' + m.preview + '</div>';
+      item.addEventListener('click', () => { selectedId = m.id; renderList(); renderReader(m); });
+      item.addEventListener('contextmenu', e => {
+        e.preventDefault(); e.stopPropagation();
+        selectedId = m.id; renderList();
+        showContextMenu(e.clientX, e.clientY, [
+          { label:'Phishing kimi bildir', icon: ICONS.alert, action: () => reportMail(m) },
+          { label:'Mesajı aç', icon: ICONS.mail, action: () => renderReader(m) },
+          { sep: true },
+          { label:'Sil', icon: ICONS.recycle, action: () => deleteMail(m) }
+        ]);
+      });
+      listEl.appendChild(item);
+    });
+  }
+
+  function renderReader(m){
+    readerEl.innerHTML =
+      '<h2>' + m.subject + '</h2>' +
+      '<div class="mail-meta"><div class="mail-avatar" style="background:' + m.color + '">' + m.letter + '</div>' +
+      '<div class="mail-meta-txt"><div class="m-name">' + m.from + '</div><div class="m-addr">&lt;' + m.addr + '&gt;</div></div></div>' +
+      '<div class="mail-body">' + m.body + '</div>';
+    readerEl.querySelectorAll('[data-fake-link]').forEach(a => {
+      a.addEventListener('mouseenter', () => toast('Link önizləməsi', 'Bu link <b>' + a.dataset.fakeLink + '</b> ünvanına yönləndirir. Rəsmi domen deyil.', 'warn', 5000));
+      a.addEventListener('click', e => { e.preventDefault(); toast('Xəbərdarlıq', 'Simulyasiyada xarici link açılmır. Bu addım real həyatda təhlükəli ola bilərdi.', 'error', 5000); });
+    });
+    const actions = el('div');
+    actions.style.cssText = 'margin-top:24px;padding-top:16px;border-top:1px solid #eee;display:flex;gap:9px;flex-wrap:wrap';
+    const btnReport = el('button', 'tool-btn danger', ICONS.alert + '<span>Phishing kimi bildir</span>');
+    btnReport.style.height = '34px';
+    btnReport.addEventListener('click', () => reportMail(m));
+    const btnDelete = el('button', 'tool-btn', ICONS.recycle + '<span>Sil</span>');
+    btnDelete.style.height = '34px';
+    btnDelete.addEventListener('click', () => deleteMail(m));
+    actions.appendChild(btnReport);
+    actions.appendChild(btnDelete);
+    readerEl.appendChild(actions);
+  }
+
+  function deleteMail(m){
+    showModal(
+      '<div class="modal-head">' +
+        '<div class="mh-icon" style="background:var(--danger-light);color:var(--danger)">' + ICONS.recycle + '</div>' +
+        '<div><h3>Mesajı sil?</h3><div class="mh-sub">' + esc(m.subject) + '</div></div>' +
+      '</div>' +
+      '<div class="modal-body"><p style="font-size:13px;line-height:1.7;color:#3b3b3b">Bu mesaj silinəcək. 15 saniyə ərzində bərpa edə bilərsiniz.</p></div>' +
+      '<div class="modal-foot"><div class="modal-score">Göndərən: ' + esc(m.from) + '</div>' +
+        '<div style="display:flex;gap:10px">' +
+          '<button class="m-btn ghost" id="delCancel">Ləğv et</button>' +
+          '<button class="m-btn danger" id="delConfirm">Sil</button>' +
+        '</div>' +
+      '</div>',
+      { dismissable: true }
+    );
+    document.getElementById('delCancel').addEventListener('click', closeModal);
+    document.getElementById('delConfirm').addEventListener('click', () => {
+      closeModal();
+      mails = mails.filter(x => x.id !== m.id);
+      if (selectedId === m.id) { selectedId = null; readerEl.innerHTML = '<div class="mail-empty">' + ICONS.mail + '<div>Mesajı oxumaq üçün soldakı siyahıdan seçin.</div></div>'; }
+      renderList();
+      toast('Mesaj silindi', '15 saniyə ərzində bərpa edə bilərsiniz.', 'info', 15000, true, 'Bərpa et', () => {
+        mails = MAIL_DATA.slice();
+        renderList();
+        toast('Bərpa olundu', 'Mesaj yenidən gələnlər qutusundadır.', 'success', 3000, true);
+      });
+    });
+  }
+
+  function reportMail(m){
+    if (state.solved.mail) return;
+    if (m.phishing) { solveTask('mail'); body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Düzgün! Siz "paypa1-secure.com" domenli saxta e-maili tanıdınız.'); return; }
+    registerWrong('mail');
+  }
+
+  readerEl.innerHTML = '<div class="mail-empty">' + ICONS.mail + '<div>Mesajı oxumaq üçün soldakı siyahıdan seçin.<br>Şübhəli mesajın üzərinə sağ klik edin.</div></div>';
+  renderList();
+  layout.appendChild(listEl); layout.appendChild(readerEl);
+  body.appendChild(layout);
+};
+
+/* --- SECURITY CENTER --- */
+const PW_CARDS = [
+  { id:'c1', pw:'123456',        correct:'weak'   },
+  { id:'c2', pw:'P@ssw0rd!',     correct:'weak'   },
+  { id:'c3', pw:'Tr7#kL9$mQ2x',  correct:'strong' },
+  { id:'c4', pw:'qwerty',        correct:'weak'   },
+  { id:'c5', pw:'BlueSky2024',   correct:'weak'   },
+  { id:'c6', pw:'K9!vR2#pLm7@',  correct:'strong' }
+];
+function shuffle(arr){ const a = arr.slice(); for (let i = a.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+RENDERERS.security = function(body){
+  if (state.solved.password) { body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Bütün şifrə kartları düzgün kateqoriyalara yerləşdirildi.'); return; }
+  const wrap = el('div', 'pw-game');
+  wrap.innerHTML =
+    '<div class="pw-hintbar">Şifrə kartlarını <strong>Zəif</strong> və ya <strong>Güclü</strong> səbətinə sürükləyin. Diqqət: uzun və simvollu görünən şifrə həmişə güclü olmur.</div>' +
+    '<div class="pw-pool" id="pw-pool"></div>' +
+    '<div class="pw-zones">' +
+      '<div class="pw-zone" data-zone="weak"><div class="pw-zone-title">' + ICONS.xcircle + '<span>Zəif şifrələr</span></div><div class="pw-zone-cards"></div></div>' +
+      '<div class="pw-zone" data-zone="strong"><div class="pw-zone-title">' + ICONS.check + '<span>Güclü şifrələr</span></div><div class="pw-zone-cards"></div></div>' +
+    '</div>';
+  const pool = wrap.querySelector('#pw-pool');
+  const zones = wrap.querySelectorAll('.pw-zone');
+
+  shuffle(PW_CARDS).forEach(c => {
+    const card = el('div', 'pw-card', c.pw);
+    card.dataset.cardId = c.id; card.dataset.correct = c.correct; card.draggable = true;
+    card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', c.id); e.dataTransfer.effectAllowed = 'move'; card.classList.add('dragging'); });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    pool.appendChild(card);
+  });
+
+  function wireDropZone(zone){
+    zone.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      const id = e.dataTransfer.getData('text/plain');
+      if (!id) return;
+      const card = wrap.querySelector('[data-card-id="' + id + '"]');
+      if (!card) return;
+      const target = zone.querySelector('.pw-zone-cards') || zone;
+      target.appendChild(card);
+      checkPlacement();
+    });
+  }
+  zones.forEach(wireDropZone);
+  wireDropZone(pool);
+
+  function checkPlacement(){
+    if (pool.querySelector('.pw-card')) return;
+    const wrongCards = [];
+    wrap.querySelectorAll('.pw-card').forEach(card => {
+      const zone = card.closest('.pw-zone');
+      if (!zone) return;
+      if (zone.dataset.zone !== card.dataset.correct) wrongCards.push(card);
+    });
+    if (wrongCards.length === 0) { solveTask('password'); body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Düzgün! Bütün şifrələr düzgün kateqoriyalara yerləşdirildi.'); return; }
+    registerWrong('password');
+    wrongCards.forEach(card => { pool.appendChild(card); card.classList.add('shake'); setTimeout(() => card.classList.remove('shake'), 520); });
+  }
+  body.appendChild(wrap);
+};
+
+/* --- BROWSER --- */
+RENDERERS.browser = function(body){
+  if (state.solved.browser) { body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Saxta bank saytı uğurla bildirildi və bloklandı.'); return; }
+
+  const chrome = el('div', 'browser-chrome');
+  chrome.innerHTML =
+    '<div class="browser-tabs"><div class="browser-tab"><span class="tab-fav"></span><span class="tab-title">Təhlükəsiz Giriş — Bank AZ</span></div></div>' +
+    '<div class="browser-nav">' +
+      '<button class="bnav-btn" id="bnavBack" title="Geri">' + ICONS.back + '</button>' +
+      '<button class="bnav-btn" id="bnavFwd" title="İrəli">' + ICONS.forward + '</button>' +
+      '<button class="bnav-btn" id="bnavRefresh" title="Yenilə">' + ICONS.refresh + '</button>' +
+      '<div class="address-bar"><button class="padlock-btn" id="padlockBtn" title="Sertifikat məlumatı">' + ICONS.lock + '</button><div class="url-text">https://secure-login.bank-az.click/login</div></div>' +
+      '<button class="report-site-btn" id="reportSiteBtn">Saytı bildir</button>' +
+    '</div>';
+
+  const content = el('div', 'browser-content');
+  const status = el('div', 'browser-statusbar hidden');
+  content.appendChild(status);
+  body.appendChild(chrome); body.appendChild(content);
+
+  function renderPage(){
+    content.innerHTML = '';
+    const page = el('div', 'fake-bank');
+    page.innerHTML =
+      '<div class="fb-logo"><div class="fb-logo-mark">' + ICONS.bank + '</div><div><div class="fb-logo-name">Bank AZ</div><div class="fb-logo-sub">Onlayn Bankçılıq</div></div></div>' +
+      '<div class="fb-title">Hesabınıza daxil olun</div>' +
+      '<div class="fb-desc">Davam etmək üçün istifadəçi kodunuzu və şifrənizi daxil edin.</div>' +
+      '<div class="fb-field"><label>İstifadəçi kodu</label><input type="text" id="fbUser" placeholder="Məsələn: 12345678" autocomplete="off"></div>' +
+      '<div class="fb-field"><label>Şifrə</label><input type="password" id="fbPass" placeholder="Şifrəniz" autocomplete="off"></div>' +
+      '<button class="fb-submit" id="fbSubmit">Daxil ol</button>' +
+      '<div class="fb-links"><a id="forgotLink">Şifrəmi unutdum</a><a id="registerLink">Qeydiyyat</a></div>' +
+      '<div class="fb-note">Bu səhifə simulyasiya məqsədi ilə hazırlanmışdır. Heç bir real məlumat göndərilmir.</div>';
+    content.appendChild(page);
+    content.appendChild(status);
+
+    const forgot = page.querySelector('#forgotLink');
+    forgot.addEventListener('mouseenter', () => { status.textContent = 'http://198.51.100.42/reset.php?id=bank'; status.classList.remove('hidden'); });
+    forgot.addEventListener('mouseleave', () => status.classList.add('hidden'));
+    forgot.addEventListener('click', e => { e.preventDefault(); toast('Diqqət', 'Bu link sizi rəsmi bank saytına deyil, naməlum IP ünvanına yönləndirir.', 'error', 5500); });
+    page.querySelector('#registerLink').addEventListener('click', e => { e.preventDefault(); toast('Məlumat', 'Simulyasiyada qeydiyyat forması aktiv deyil.', 'info', 3000, true); });
+
+    page.querySelector('#fbSubmit').addEventListener('click', () => {
+      const u = page.querySelector('#fbUser').value.trim() || '12345678';
+      const pass = page.querySelector('#fbPass').value;
+      const p = pass ? '•'.repeat(pass.length) : '••••••••';
+      showModal(
+        '<div class="modal-head"><div class="mh-icon" style="background:var(--danger-light);color:var(--danger)">' + ICONS.alert + '</div>' +
+          '<div><h3>Diqqət — bu məlumatlar oğurlandı!</h3><div class="mh-sub">Simulyasiya nəticəsi</div></div></div>' +
+        '<div class="modal-body">' +
+          '<p style="font-size:13.5px;line-height:1.72;color:#2b2b2b;margin-bottom:14px">Simulyasiyada sizin istifadəçi kodunuz və şifrəniz qeydə alındı. <strong>Real həyatda bu məlumat artıq oğurlanmışdı</strong> və hücumçu hesabınıza daxil olub pulunuzu çıxara bilərdi.</p>' +
+          '<div class="cert-row"><span class="ck">İstifadəçi kodu</span><span class="cv">' + esc(u) + '</span></div>' +
+          '<div class="cert-row"><span class="ck">Şifrə</span><span class="cv">' + p + '</span></div>' +
+          '<div class="cert-row"><span class="ck">Ünvan</span><span class="cv">secure-login.bank-az.click</span></div>' +
+          '<div class="cert-warn">Bu səhifə <b>saxta idi</b>. Domen "bank-az.click" — rəsmi bank domeni deyil. Kilid ikonu yalnız şifrələməni göstərir, saytın etibarlılığını yox.</div>' +
+        '</div>' +
+        '<div class="modal-foot"><div class="modal-score">Növbəti dəfə: domeni yoxla</div><button class="m-btn" id="fbModalOk">Anladım</button></div>',
+        { dismissable: false }
+      );
+      document.getElementById('fbModalOk').addEventListener('click', closeModal);
+    });
+  }
+
+  renderPage();
+
+  chrome.querySelector('#padlockBtn').addEventListener('click', () => {
+    showModal(
+      '<div class="modal-head"><div class="mh-icon" style="background:#fff4e0;color:#b26b00">' + ICONS.lock + '</div>' +
+        '<div><h3>Sertifikat məlumatı</h3><div class="mh-sub">secure-login.bank-az.click</div></div></div>' +
+      '<div class="modal-body">' +
+        '<div class="cert-row"><span class="ck">Verilib</span><span class="cv">secure-login.bank-az.click</span></div>' +
+        '<div class="cert-row"><span class="ck">Verən</span><span class="cv">Let\'s Encrypt R3</span></div>' +
+        '<div class="cert-row"><span class="ck">Etibarlılıq müddəti</span><span class="cv">12.01.2025 — 12.04.2025</span></div>' +
+        '<div class="cert-row"><span class="ck">Şifrələmə</span><span class="cv">TLS 1.3, AES-256</span></div>' +
+        '<div class="cert-row"><span class="ck">Status</span><span class="cv" style="color:#0f7b3f">Etibarlı sertifikat</span></div>' +
+        '<div class="cert-warn">Sertifikat texniki cəhətdən etibarlıdır, lakin bu, saytın <b>rəsmi bank saytı</b> olduğunu sübut etmir. Domen "bank-az.click" — bankın həqiqi domeni deyil.</div>' +
+      '</div>' +
+      '<div class="modal-foot"><div class="modal-score">Kilid ikonu yalnız şifrələməni göstərir.</div><button class="m-btn" id="certClose">Anladım</button></div>',
+      { dismissable: true }
+    );
+    document.getElementById('certClose').addEventListener('click', closeModal);
+  });
+
+  chrome.querySelector('#bnavBack').addEventListener('click', () => toast('Naviqasiya', 'Tarixçədə əvvəlki səhifə yoxdur — ilk səhifədəsiniz.', 'info', 3500));
+  chrome.querySelector('#bnavFwd').addEventListener('click', () => toast('Naviqasiya', 'İrəli tarixçə yoxdur — bir səhifəlik simulyasiya.', 'info', 3500));
+  chrome.querySelector('#bnavRefresh').addEventListener('click', () => {
+    content.classList.add('refreshing');
+    setTimeout(() => { renderPage(); content.classList.remove('refreshing'); toast('Səhifə yeniləndi', 'URL: secure-login.bank-az.click/login', 'success', 2500, true); }, 300);
+  });
+
+  chrome.querySelector('#reportSiteBtn').addEventListener('click', () => {
+    if (state.solved.browser) return;
+    solveTask('browser');
+    chrome.querySelector('#reportSiteBtn').disabled = true;
+    chrome.querySelector('#reportSiteBtn').textContent = 'Bildirildi';
+    body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Saxta bank saytı düzgün bildirildi. Domen "bank-az.click" rəsmi bank domeni deyildi.');
+  });
+};
+
+/* --- SETTINGS (with working sidebar) --- */
+function passwordScore(pw){
+  if (!pw) return { level: 0, label: 'Şifrə daxil edin', cls: '' };
+  const len = pw.length;
+  const hasLower = /[a-z]/.test(pw), hasUpper = /[A-Z]/.test(pw), hasDigit = /[0-9]/.test(pw), hasSymbol = /[^A-Za-z0-9]/.test(pw);
+  const classes = [hasLower, hasUpper, hasDigit, hasSymbol].filter(Boolean).length;
+  const common = ['password','123456','qwerty','admin','letmein','welcome','azerbaycan','baku'];
+  const lower = pw.toLowerCase();
+  let isCommon = false;
+  for (let i = 0; i < common.length; i++) { if (lower.indexOf(common[i]) !== -1) { isCommon = true; break; } }
+  if (isCommon) return { level: 1, label: 'Zəif — ümumi söz istifadə olunur', cls: 's1' };
+  if (len < 8) return { level: 1, label: 'Zəif — çox qısa', cls: 's1' };
+  if (len >= 12 && classes >= 3) return { level: 4, label: 'Güclü', cls: 's4' };
+  if (len >= 10 && classes >= 3) return { level: 3, label: 'Yaxşı', cls: 's3' };
+  if (len >= 8 && classes >= 2) return { level: 2, label: 'Orta', cls: 's2' };
+  return { level: 1, label: 'Zəif', cls: 's1' };
+}
+
+RENDERERS.settings = function(body){
+  const layout = el('div', 'settings-layout');
+  const side = el('div', 'settings-side');
+  const main = el('div', 'settings-main');
+  layout.appendChild(side); layout.appendChild(main);
+  body.appendChild(layout);
+
+  const SIDE_ITEMS = [
+    { id:'system',    label:'Sistem',     icon:'list' },
+    { id:'network',   label:'Şəbəkə',     icon:'globe' },
+    { id:'sound',     label:'Səs',        icon:'speaker' },
+    { id:'accounts',  label:'Hesablar',   icon:'key' },
+    { id:'privacy',   label:'Məxfilik',   icon:'shield' }
+  ];
+
+  function renderSidebar(){
+    side.innerHTML =
+      '<div class="settings-user"><div class="su-avatar">AZ</div><div><div class="su-name">Tələbə Hesabı</div><div class="su-mail">student@cyberlock.az</div></div></div>';
+    SIDE_ITEMS.forEach(item => {
+      const btn = el('button', 'side-item' + (state.currentSettingsPanel === item.id ? ' active' : ''));
+      btn.innerHTML = ICONS[item.icon] + '<span>' + item.label + '</span>';
+      btn.addEventListener('click', () => { state.currentSettingsPanel = item.id; renderSidebar(); renderMain(); });
+      side.appendChild(btn);
+    });
+  }
+
+  function renderMain(){
+    main.innerHTML = '';
+    const panel = state.currentSettingsPanel;
+
+    if (panel === 'accounts') {
+      if (state.solved.settings) {
+        main.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Şifrə uğurla dəyişdirildi və güclülük meyarına cavab verdi.');
+        return;
+      }
+      main.innerHTML =
+        '<h2>Şifrəni dəyişdir</h2>' +
+        '<div class="sm-sub">Hesabınızın təhlükəsizliyi üçün güclü şifrə seçin. Şifrə ən azı 12 simvol olmalı və böyük hərf, kiçik hərf, rəqəm və simvoldan ən azı üçünü ehtiva etməlidir.</div>' +
+        '<div class="pw-field"><label>Cari şifrə</label><input type="password" id="curPw" placeholder="Cari şifrəniz" autocomplete="off"></div>' +
+        '<div class="pw-field"><label>Yeni şifrə</label><input type="password" id="newPw" placeholder="Yeni şifrə" autocomplete="off"></div>' +
+        '<div class="strength-wrap"><div class="strength-bars"><div class="strength-seg"></div><div class="strength-seg"></div><div class="strength-seg"></div><div class="strength-seg"></div></div><div class="strength-text" id="strengthText">Şifrə daxil edin</div></div>' +
+        '<div class="pw-rules" id="pwRules">' +
+          '<div class="pw-rule" data-rule="len"><span class="dot">' + ICONS.check + '</span><span>Ən azı 12 simvol</span></div>' +
+          '<div class="pw-rule" data-rule="lower"><span class="dot">' + ICONS.check + '</span><span>Kiçik hərf (a-z)</span></div>' +
+          '<div class="pw-rule" data-rule="upper"><span class="dot">' + ICONS.check + '</span><span>Böyük hərf (A-Z)</span></div>' +
+          '<div class="pw-rule" data-rule="digit"><span class="dot">' + ICONS.check + '</span><span>Rəqəm (0-9)</span></div>' +
+          '<div class="pw-rule" data-rule="symbol"><span class="dot">' + ICONS.check + '</span><span>Simvol (!@#$% və s.)</span></div>' +
+        '</div>' +
+        '<div class="pw-field"><label>Yeni şifrənin təsdiqi</label><input type="password" id="confPw" placeholder="Yeni şifrəni təkrar yazın" autocomplete="off"></div>' +
+        '<div class="settings-actions"><button class="tool-btn primary" id="confirmBtn" style="height:36px;padding:0 22px" disabled>Təsdiqlə</button><button class="tool-btn" id="cancelBtn" style="height:36px;padding:0 22px">Ləğv et</button></div>';
+
+      const curPw = main.querySelector('#curPw');
+      const newPw = main.querySelector('#newPw');
+      const confPw = main.querySelector('#confPw');
+      const segs = main.querySelectorAll('.strength-seg');
+      const sText = main.querySelector('#strengthText');
+      const confirmBtn = main.querySelector('#confirmBtn');
+      const rules = main.querySelectorAll('.pw-rule');
+      const segColors = ['#c42b1c','#d97706','#b8a600','#0f7b3f'];
+
+      function updateStrength(){
+        const val = newPw.value;
+        const res = passwordScore(val);
+        sText.textContent = res.label;
+        sText.className = 'strength-text ' + res.cls;
+        segs.forEach((s, i) => { s.style.background = (i < res.level && val) ? segColors[Math.min(res.level - 1, 3)] : '#e2e2e2'; });
+        const checks = { len: val.length >= 12, lower: /[a-z]/.test(val), upper: /[A-Z]/.test(val), digit: /[0-9]/.test(val), symbol: /[^A-Za-z0-9]/.test(val) };
+        rules.forEach(r => r.classList.toggle('ok', !!checks[r.dataset.rule]));
+        const match = val.length > 0 && val === confPw.value;
+        confirmBtn.disabled = !(res.level === 4 && match);
+      }
+      newPw.addEventListener('input', updateStrength);
+      confPw.addEventListener('input', updateStrength);
+      confirmBtn.addEventListener('click', () => {
+        if (state.solved.settings || confirmBtn.disabled) return;
+        solveTask('settings');
+        renderMain();
+      });
+      main.querySelector('#cancelBtn').addEventListener('click', () => { curPw.value = ''; newPw.value = ''; confPw.value = ''; updateStrength(); });
+      return;
+    }
+
+    if (panel === 'system') {
+      main.innerHTML =
+        '<h2>Sistem</h2><div class="sm-sub">Cihaz haqqında məlumat.</div>' +
+        '<table class="info-table">' +
+          '<tr><td>Cihaz adı</td><td>CYBERLOCK-QUARANTINE</td></tr>' +
+          '<tr><td>İstehsalçı</td><td>Cyberlock Security Labs</td></tr>' +
+          '<tr><td>Prosesor</td><td>Intel Core i7-1165G7 @ 2.80GHz</td></tr>' +
+          '<tr><td>RAM</td><td>16 GB (15.7 GB istifadə olunur)</td></tr>' +
+          '<tr><td>Sistem tipi</td><td>64-bit</td></tr>' +
+          '<tr><td>Əməliyyat sistemi</td><td>Cyberlock OS 1.0 (Simulyasiya)</td></tr>' +
+          '<tr><td>Versiya</td><td>1.0.2472</td></tr>' +
+          '<tr><td>Quraşdırılma tarixi</td><td>01.01.2025</td></tr>' +
+        '</table>';
+      return;
+    }
+
+    if (panel === 'network') {
+      main.innerHTML =
+        '<h2>Şəbəkə və İnternet</h2><div class="sm-sub">Şəbəkə bağlantısı və parametrlər.</div>' +
+        '<table class="info-table">' +
+          '<tr><td>Status</td><td style="color:var(--success);font-weight:600">Bağlı</td></tr>' +
+          '<tr><td>Şəbəkə adı</td><td>CYBERLOCK-SECURE</td></tr>' +
+          '<tr><td>IP ünvanı</td><td>192.168.1.42</td></tr>' +
+          '<tr><td>Şlüz</td><td>255.255.255.0</td></tr>' +
+          '<tr><td>DNS</td><td>1.1.1.1, 8.8.8.8</td></tr>' +
+          '<tr><td>MAC</td><td>A4:5E:60:2B:11:CF</td></tr>' +
+          '<tr><td>Sürət</td><td>867 Mbps</td></tr>' +
+        '</table>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">Wi-Fi</div><div class="setting-toggle-desc">Simsiz şəbəkəyə qoşul</div></div><div class="toggle-switch ' + (state.settingsToggles.wifi ? 'on' : '') + '" data-tog="wifi"></div></div>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">Bluetooth</div><div class="setting-toggle-desc">Yaxınlıqdakı cihazlara qoşul</div></div><div class="toggle-switch ' + (state.settingsToggles.bluetooth ? 'on' : '') + '" data-tog="bluetooth"></div></div>';
+      wireToggles(main);
+      return;
+    }
+
+    if (panel === 'sound') {
+      main.innerHTML =
+        '<h2>Səs</h2><div class="sm-sub">Səs parametrlərini tənzimləyin.</div>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">Səs səviyyəsi</div><div class="setting-toggle-desc">Dinamiklərin həcmi</div></div>' +
+        '<input type="range" min="0" max="100" value="' + state.volume + '" style="width:180px;accent-color:var(--accent)" id="volRange"></div>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">Zəng səsi</div><div class="setting-toggle-desc">Bildiriş səsləri</div></div><div class="toggle-switch on" data-tog="ring"></div></div>';
+      const volRange = main.querySelector('#volRange');
+      volRange.addEventListener('input', () => { state.volume = Number(volRange.value); saveState(); });
+      wireToggles(main);
+      return;
+    }
+
+    if (panel === 'privacy') {
+      main.innerHTML =
+        '<h2>Məxfilik və Təhlükəsizlik</h2><div class="sm-sub">Məlumatlarınızı və cihazınızı qoruyun.</div>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">Windows Defender</div><div class="setting-toggle-desc">Real vaxt antivirus müdafiəsi</div></div><div class="toggle-switch on" data-tog="defender"></div></div>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">Firewall</div><div class="setting-toggle-desc">Şəbəkə trafikini filtrələ</div></div><div class="toggle-switch on" data-tog="firewall"></div></div>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">İki faktorlu autentifikasiya</div><div class="setting-toggle-desc">Hesab girişinə əlavə qat</div></div><div class="toggle-switch" data-tog="2fa"></div></div>' +
+        '<div class="setting-toggle"><div class="setting-toggle-info"><div class="setting-toggle-label">Telemetriya</div><div class="setting-toggle-desc">Anonim istifadə statistikası</div></div><div class="toggle-switch" data-tog="telemetry"></div></div>';
+      wireToggles(main);
+      return;
+    }
+  }
+
+  function wireToggles(container){
+    container.querySelectorAll('.toggle-switch').forEach(t => {
+      t.addEventListener('click', () => {
+        t.classList.toggle('on');
+        const key = t.dataset.tog;
+        const on = t.classList.contains('on');
+        if (key === 'wifi' || key === 'bluetooth') { state.settingsToggles[key] = on; saveState(); }
+        const labels = { wifi:'Wi-Fi', bluetooth:'Bluetooth', ring:'Zəng səsi', defender:'Windows Defender', firewall:'Firewall', '2fa':'2FA', telemetry:'Telemetriya' };
+        toast('Parametr', (labels[key] || key) + ': ' + (on ? 'aktiv' : 'söndürüldü'), 'info', 3000, true);
+      });
+    });
+  }
+
+  renderSidebar();
+  renderMain();
+};
+
+/* --- FILE EXPLORER --- */
+const FILE_DATA = [
+  { id:'f1', full:'invoice_2024.pdf',       base:'invoice_2024',       typeHidden:'PDF Sənədi',        typeShown:'PDF Sənədi (.pdf)',          size:'248 KB', date:'12.03.2025', icon:'pdf',   malicious:false },
+  { id:'f2', full:'setup_chrome.exe',       base:'setup_chrome',       typeHidden:'Tətbiq',            typeShown:'Tətbiq (.exe)',               size:'1.2 MB', date:'10.03.2025', icon:'exe',   malicious:false },
+  { id:'f3', full:'photo.jpg.exe',          base:'photo.jpg',          typeHidden:'JPG Şəkli',         typeShown:'Tətbiq (.exe)',               size:'86 KB',  date:'14.03.2025', icon:'exe',   malicious:true  },
+  { id:'f4', full:'report.docx',            base:'report',             typeHidden:'Word Sənədi',       typeShown:'Word Sənədi (.docx)',         size:'132 KB', date:'11.03.2025', icon:'doc',   malicious:false },
+  { id:'f5', full:'free_vpn_installer.msi', base:'free_vpn_installer', typeHidden:'Windows Installer', typeShown:'Windows Installer (.msi)',    size:'4.8 MB', date:'13.03.2025', icon:'msi',   malicious:true  },
+  { id:'f6', full:'notes.txt',              base:'notes',              typeHidden:'Mətn Sənədi',       typeShown:'Mətn Sənədi (.txt)',          size:'3 KB',   date:'09.03.2025', icon:'txt',   malicious:false }
+];
+const FILE_ICON_CLASS = { pdf:'icon-pdf', exe:'icon-exe', image:'icon-img', doc:'icon-doc', msi:'icon-msi', txt:'icon-txt' };
+
+RENDERERS.files = function(body){
+  if (state.solved.files) { body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'Şübhəli fayllar uğurla karantinə alındı.'); return; }
+  let showExt = false;
+  const selected = new Set();
+
+  const wrap = el('div', 'fe-layout');
+  const toolbar = el('div', 'app-toolbar');
+  toolbar.innerHTML =
+    '<button class="tool-btn" id="feNew">' + ICONS.folderNew + '<span>Yeni</span></button>' +
+    '<div class="tool-sep"></div>' +
+    '<button class="tool-btn" id="feView">' + ICONS.eye + '<span>Görünüş</span>' + ICONS.chevronD + '</button>' +
+    '<div class="tool-sep"></div>' +
+    '<button class="tool-btn danger" id="feQuarantine" disabled>' + ICONS.security + '<span>Karantinə al</span></button>' +
+    '<div style="flex:1"></div>' +
+    '<div style="font-size:11.5px;color:var(--text-3);padding-right:4px" id="feCount"></div>';
+
+  const address = el('div', 'fe-address');
+  address.innerHTML = '<span class="crumb">Bu Kompüter</span>' + ICONS.chevronR + '<span class="crumb">İstifadəçi</span>' + ICONS.chevronR + '<span class="crumb last">Yükləmələr</span>';
+
+  const filelist = el('div', 'fe-filelist');
+  filelist.innerHTML = '<div class="fe-head"><div>Ad</div><div>Dəyişdirilib</div><div>Növ</div><div>Ölçü</div><div></div></div>';
+  const rowsHost = el('div');
+  filelist.appendChild(rowsHost);
+
+  const statusbar = el('div', 'fe-statusbar');
+  statusbar.innerHTML = '<span id="feStatusLeft">6 element</span><span id="feStatusRight"></span>';
+
+  wrap.appendChild(toolbar); wrap.appendChild(address); wrap.appendChild(filelist); wrap.appendChild(statusbar);
+  body.appendChild(wrap);
+
+  const quarantineBtn = toolbar.querySelector('#feQuarantine');
+  const countEl = toolbar.querySelector('#feCount');
+
+  function renderRows(){
+    rowsHost.innerHTML = '';
+    FILE_DATA.forEach(f => {
+      const name = showExt ? f.full : f.base;
+      const type = showExt ? f.typeShown : f.typeHidden;
+      const iconKey = (!showExt && f.id === 'f3') ? 'image' : f.icon;
+      const row = el('div', 'fe-row' + (selected.has(f.id) ? ' sel' : ''));
+      row.innerHTML =
+        '<div class="fe-name"><div class="fe-check">' + ICONS.check + '</div><span class="' + FILE_ICON_CLASS[iconKey] + '">' + ICONS[iconKey] + '</span><span>' + name + '</span></div>' +
+        '<div style="color:var(--text-3);font-size:11.5px">' + f.date + '</div>' +
+        '<div style="color:var(--text-2);font-size:11.5px">' + type + '</div>' +
+        '<div style="color:var(--text-3);font-size:11.5px">' + f.size + '</div><div></div>';
+      if (f.id === 'f3' && !showExt) row.title = 'Diqqət: Bu fayl əslində .exe uzantılıdır. Uzantıları göstərmək üçün "Görünüş" menyusundan istifadə edin.';
+      row.addEventListener('click', () => { if (selected.has(f.id)) selected.delete(f.id); else selected.add(f.id); renderRows(); });
+      row.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        showContextMenu(e.clientX, e.clientY, [
+          { label:'Aç', icon: ICONS.file, action: () => toast('Simulyasiya', 'Fayl açılmır — təhlükəsizlik simulyasiyası.', 'info', 3000, true) },
+          { label:'Xassələr', icon: ICONS.info, action: () => toast(f.full, 'Ölçü: ' + f.size + ' · Dəyişdirilib: ' + f.date + ' · Növ: ' + f.typeShown, 'info', 5000, true) },
+          { sep: true },
+          { label:'Karantinə al', icon: ICONS.security, action: () => { selected.clear(); selected.add(f.id); renderRows(); quarantineBtn.click(); } }
+        ]);
+      });
+      rowsHost.appendChild(row);
+    });
+    quarantineBtn.disabled = selected.size === 0;
+    countEl.textContent = selected.size > 0 ? (selected.size + ' seçildi') : '';
+    statusbar.querySelector('#feStatusLeft').textContent = FILE_DATA.length + ' element';
+    statusbar.querySelector('#feStatusRight').textContent = showExt ? 'Uzantılar göstərilir' : 'Uzantılar gizlədilib';
+  }
+
+  toolbar.querySelector('#feView').addEventListener('click', e => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menu = el('div', 'fe-viewmenu');
+    const item = el('button', 'fe-viewitem' + (showExt ? ' checked' : ''));
+    item.innerHTML = '<span class="box">' + ICONS.check + '</span><span>Fayl uzantılarını göstər</span>';
+    item.addEventListener('click', ev => {
+      ev.stopPropagation(); showExt = !showExt; menu.remove(); renderRows();
+      if (showExt) toast('Görünüş dəyişdirildi', 'Fayl uzantıları indi göstərilir. Fayl adlarını diqqətlə yoxlayın.', 'info', 5000);
+    });
+    menu.appendChild(item);
+    document.body.appendChild(menu);
+    menu.style.left = Math.min(rect.left, window.innerWidth - 240) + 'px';
+    menu.style.top = (rect.bottom + 4) + 'px';
+    setTimeout(() => {
+      const closeMenu = ev => { if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('mousedown', closeMenu); } };
+      document.addEventListener('mousedown', closeMenu);
+    }, 0);
+  });
+
+  toolbar.querySelector('#feNew').addEventListener('click', e => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menu = el('div', 'fe-viewmenu');
+    const opts = [
+      { icon: ICONS.folderNew, label: 'Yeni qovluq' },
+      { icon: ICONS.txt,       label: 'Yeni mətn sənədi' },
+      { icon: ICONS.doc,       label: 'Yeni Word sənədi' },
+      { sep: true },
+      { icon: ICONS.file,      label: 'Fayl yüklə...' }
+    ];
+    opts.forEach(o => {
+      if (o.sep) { menu.appendChild(el('div', 'ctx-sep')); return; }
+      const b = el('button', 'fe-viewitem');
+      b.innerHTML = '<span style="display:inline-grid;place-items:center;width:18px">' + o.icon + '</span><span>' + o.label + '</span>';
+      b.addEventListener('click', ev => {
+        ev.stopPropagation(); menu.remove();
+        toast('Simulyasiya', 'Bu simulyasiyada yeni fayl yaradılmır. Tapşırıq üçün hazır fayllardan istifadə edin.', 'info', 4500);
+      });
+      menu.appendChild(b);
+    });
+    document.body.appendChild(menu);
+    menu.style.left = Math.min(rect.left, window.innerWidth - 240) + 'px';
+    menu.style.top = (rect.bottom + 4) + 'px';
+    setTimeout(() => {
+      const closeMenu = ev => { if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('mousedown', closeMenu); } };
+      document.addEventListener('mousedown', closeMenu);
+    }, 0);
+  });
+
+  quarantineBtn.addEventListener('click', () => {
+    if (state.solved.files || selected.size === 0) return;
+    const correctIds = FILE_DATA.filter(f => f.malicious).map(f => f.id);
+    const selArr = Array.from(selected);
+    const allCorrect = selArr.length === correctIds.length && selArr.every(id => correctIds.indexOf(id) !== -1);
+    if (allCorrect) {
+      solveTask('files');
+      body.innerHTML = solvedScreen('Tapşırıq tamamlandı', 'İkiqat uzantılı "photo.jpg.exe" və naməlum mənbədən gələn "free_vpn_installer.msi" faylları karantinə alındı.');
+      return;
+    }
+    let reason = '';
+    const wrongPicks = selArr.filter(id => correctIds.indexOf(id) === -1);
+    const missed = correctIds.filter(id => selArr.indexOf(id) === -1);
+    if (wrongPicks.length > 0) reason = 'Etibarlı fayl(lar) səhvən seçildi. ';
+    if (missed.length > 0) reason += missed.length + ' şübhəli fayl hələ də qovluqdadır. ';
+    registerWrong('files', reason);
+    selected.clear(); renderRows();
+  });
+
+  renderRows();
+};
+
+/* ============ DESKTOP ICONS ============ */
+function renderDesktopIcons(){
+  const host = document.getElementById('desktop-icons');
+  host.innerHTML = '';
+  APPS.forEach(app => {
+    const icon = el('div', 'desktop-icon');
+    icon.innerHTML = '<div class="tile" style="background:' + app.grad + '">' + ICONS[app.icon] + '</div><div class="label">' + app.name + '</div>';
+    icon.addEventListener('click', e => {
+      e.stopPropagation();
+      document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+      icon.classList.add('selected');
+    });
+    icon.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      icon.classList.remove('selected');
+      openApp(app.id);
+    });
+    host.appendChild(icon);
+  });
+  document.getElementById('wallpaper').addEventListener('click', () => {
+    document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+  });
+}
+
+/* ============ LOCK WIDGET ============ */
+function renderLockWidget(){
+  const host = document.getElementById('lock-widget');
+  host.innerHTML = '<div class="lw-title">Quarantine</div>' +
+    '<div class="lw-counter"><span id="lw-score">0</span> <span>bal</span></div>' +
+    '<div class="lw-best" id="lw-best">Ən yaxşı: 0</div>' +
+    '<div class="lw-locks" id="lw-locks"></div>' +
+    '<div class="lw-progress"><div class="lw-progress-fill" id="lw-progress"></div></div>';
+  updateLockWidget();
+}
+function updateLockWidget(){
+  const scoreEl = document.getElementById('lw-score');
+  if (scoreEl) scoreEl.textContent = state.score;
+  const bestEl = document.getElementById('lw-best');
+  if (bestEl) bestEl.textContent = 'Ən yaxşı: ' + state.bestScore;
+  const locksHost = document.getElementById('lw-locks');
+  if (!locksHost) return;
+  locksHost.innerHTML = '';
+  TASK_ORDER.forEach(taskId => {
+    const solved = !!state.solved[taskId];
+    const lock = el('div', 'lw-lock' + (solved ? ' open' : ''));
+    lock.innerHTML = solved ? ICONS.unlock : ICONS.lock;
+    lock.title = TASKS[taskId].title + (solved ? ' — açıldı' : '');
+    locksHost.appendChild(lock);
+  });
+  const fill = document.getElementById('lw-progress');
+  if (fill) fill.style.width = (SOLVED_COUNT() / TASK_ORDER.length * 100) + '%';
+}
+
+/* ============ TASKBAR ============ */
+function renderTaskbar(){
+  const bar = document.getElementById('taskbar');
+  const center = el('div');
+  center.id = 'taskbar-center';
+
+  const startBtn = el('button', 'tb-btn');
+  startBtn.id = 'start-btn';
+  startBtn.title = 'Başlat';
+  startBtn.innerHTML = ICON_WIN;
+  startBtn.addEventListener('click', e => { e.stopPropagation(); toggleStartMenu(); });
+  center.appendChild(startBtn);
+
+  APPS.forEach(app => {
+    const btn = el('button', 'tb-btn');
+    btn.dataset.app = app.id;
+    btn.title = app.name;
+    const wrapIcon = el('div', 'tb-app-icon');
+    wrapIcon.innerHTML = ICONS[app.icon];
+    wrapIcon.style.color = app.color;
+    btn.appendChild(wrapIcon);
+    btn.addEventListener('click', () => {
+      const rec = openWindows.get(app.id);
+      if (rec && !rec.minimized) { rec.minimized = true; rec.el.style.display = 'none'; refreshTaskbar(); }
+      else openApp(app.id);
+    });
+    center.appendChild(btn);
+  });
+  bar.appendChild(center);
+
+  const tray = el('div');
+  tray.id = 'system-tray';
+
+  const hintBtn = el('button', 'tray-btn');
+  hintBtn.id = 'tray-hint';
+  hintBtn.title = 'İpucu';
+  hintBtn.innerHTML = ICONS.hint;
+  hintBtn.addEventListener('click', e => { e.stopPropagation(); useHint(); });
+  tray.appendChild(hintBtn);
+
+  const bellBtn = el('button', 'tray-btn');
+  bellBtn.id = 'tray-bell';
+  bellBtn.title = 'Bildirişlər';
+  bellBtn.innerHTML = ICONS.bell + '<span class="bell-badge hidden" id="bell-badge">0</span>';
+  bellBtn.addEventListener('click', e => { e.stopPropagation(); toggleNotifPanel(); });
+  tray.appendChild(bellBtn);
+
+  const wifiBtn = el('button', 'tray-btn');
+  wifiBtn.id = 'tray-wifi';
+  wifiBtn.title = 'Şəbəkə və səs';
+  wifiBtn.innerHTML = ICONS.wifi + ICONS.volume;
+  wifiBtn.style.gap = '3px';
+  wifiBtn.addEventListener('click', e => { e.stopPropagation(); toggleQuickSettings(); });
+  tray.appendChild(wifiBtn);
+
+  const timerEl = el('div');
+  timerEl.id = 'tray-timer';
+  timerEl.className = 'hidden';
+  timerEl.title = 'Oyun sayğacı';
+  timerEl.innerHTML = ICONS.clock + '<span id="timer-text">' + fmtTime(state.timerDuration) + '</span>';
+  tray.appendChild(timerEl);
+
+  const clock = el('div');
+  clock.id = 'tray-clock';
+  clock.title = 'Tarix və saat';
+  clock.addEventListener('click', e => { e.stopPropagation(); toggleCalendarPanel(); });
+  tray.appendChild(clock);
+  updateClock();
+  setInterval(updateClock, 15000);
+
+  bar.appendChild(tray);
+}
+
+function updateClock(){
+  const c = document.getElementById('tray-clock');
+  if (!c) return;
+  const d = new Date();
+  const time = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  const date = pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear();
+  c.innerHTML = '<div>' + time + '</div><div class="t2">' + date + '</div>';
+}
+
+function renderTaskbarScore(){ updateLockWidget(); }
+
+/* ============ NOTIFICATION PANEL ============ */
+function toggleNotifPanel(){
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  closeOtherPanels('notif');
+  const isHidden = panel.classList.contains('hidden');
+  if (isHidden) {
+    if (!panel.innerHTML.trim()) {
+      panel.innerHTML = '<div class="notif-head"><span>Bildirişlər</span><button id="notif-clear">Təmizlə</button></div><div class="notif-list" id="notif-list"></div>';
+      panel.querySelector('#notif-clear').addEventListener('click', e => { e.stopPropagation(); notifications.clear(); });
+    }
+    notifications.render();
+    notifications.markAllRead();
+    panel.classList.remove('hidden');
+    setActiveTray('tray-bell');
+  } else {
+    panel.classList.add('hidden');
+    setActiveTray(null);
+  }
+}
+
+/* ============ QUICK SETTINGS ============ */
+function toggleQuickSettings(){
+  let panel = document.getElementById('quick-settings');
+  if (panel) { panel.remove(); setActiveTray(null); return; }
+  closeOtherPanels('qs');
+  panel = el('div');
+  panel.id = 'quick-settings';
+  panel.innerHTML =
+    '<div class="qs-head">Sürətli parametrlər</div>' +
+    '<div class="qs-grid">' +
+      '<button class="qs-tile ' + (state.settingsToggles.wifi ? 'active' : '') + '" data-qs="wifi">' + ICONS.wifi +
+        '<div><div class="qs-name">Wi-Fi</div><div class="qs-status">' + (state.settingsToggles.wifi ? 'CYBERLOCK-SECURE' : 'Bağlı') + '</div></div></button>' +
+      '<button class="qs-tile ' + (state.settingsToggles.bluetooth ? 'active' : '') + '" data-qs="bluetooth">' + ICONS.bluetooth +
+        '<div><div class="qs-name">Bluetooth</div><div class="qs-status">' + (state.settingsToggles.bluetooth ? 'Aktiv' : 'Bağlı') + '</div></div></button>' +
+      '<button class="qs-tile ' + (state.settingsToggles.plane ? 'active' : '') + '" data-qs="plane">' + ICONS.plane +
+        '<div><div class="qs-name">Təyyarə</div><div class="qs-status">' + (state.settingsToggles.plane ? 'Aktiv' : 'Bağlı') + '</div></div></button>' +
+      '<button class="qs-tile ' + (state.settingsToggles.night ? 'active' : '') + '" data-qs="night">' + ICONS.moon +
+        '<div><div class="qs-name">Gecə rejimi</div><div class="qs-status">' + (state.settingsToggles.night ? 'Aktiv' : 'Bağlı') + '</div></div></button>' +
+    '</div>' +
+    '<div class="qs-slider-row">' + ICONS.volume + '<input type="range" min="0" max="100" value="' + state.volume + '" class="qs-slider" id="qsVol"><span class="qs-slider-val" id="qsVolVal">' + state.volume + '</span></div>' +
+    '<div class="qs-slider-row">' + ICONS.sun + '<input type="range" min="0" max="100" value="' + state.brightness + '" class="qs-slider" id="qsBright"><span class="qs-slider-val" id="qsBrightVal">' + state.brightness + '</span></div>';
+  document.body.appendChild(panel);
+
+  panel.querySelectorAll('.qs-tile').forEach(tile => {
+    tile.addEventListener('click', ev => {
+      ev.stopPropagation();
+      const key = tile.dataset.qs;
+      state.settingsToggles[key] = !state.settingsToggles[key];
+      saveState();
+      tile.classList.toggle('active', state.settingsToggles[key]);
+      const statusEl = tile.querySelector('.qs-status');
+      const names = { wifi: { on:'CYBERLOCK-SECURE', off:'Bağlı' }, bluetooth: { on:'Aktiv', off:'Bağlı' }, plane: { on:'Aktiv', off:'Bağlı' }, night: { on:'Aktiv', off:'Bağlı' } };
+      statusEl.textContent = state.settingsToggles[key] ? names[key].on : names[key].off;
+    });
+  });
+
+  const vol = panel.querySelector('#qsVol');
+  vol.addEventListener('input', () => { state.volume = Number(vol.value); panel.querySelector('#qsVolVal').textContent = vol.value; saveState(); });
+  const bright = panel.querySelector('#qsBright');
+  bright.addEventListener('input', () => { state.brightness = Number(bright.value); panel.querySelector('#qsBrightVal').textContent = bright.value; saveState(); });
+  setActiveTray('tray-wifi');
+}
+
+/* ============ CALENDAR PANEL ============ */
+function toggleCalendarPanel(){
+  let panel = document.getElementById('calendar-panel');
+  if (panel) { panel.remove(); setActiveTray(null); return; }
+  closeOtherPanels('cal');
+  panel = el('div');
+  panel.id = 'calendar-panel';
+  const now = new Date();
+  const dow = ['B','B.e','Ç','Ç.a','C','C.a','Ş'];
+  const months = ['Yanvar','Fevral','Mart','Aprel','May','İyun','İyul','Avqust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startDay = first.getDay() === 0 ? 6 : first.getDay() - 1;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  let grid = '';
+  dow.forEach(d => { grid += '<div class="cal-dow">' + d + '</div>'; });
+  for (let i = 0; i < startDay; i++) grid += '<div class="cal-day other"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === now.getDate();
+    grid += '<div class="cal-day' + (isToday ? ' today' : '') + '">' + d + '</div>';
+  }
+  panel.innerHTML =
+    '<div class="cal-time">' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds()) + '</div>' +
+    '<div class="cal-date">' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear() + '</div>' +
+    '<div class="cal-head"><span>' + months[now.getMonth()] + ' ' + now.getFullYear() + '</span><span>Bugün</span></div>' +
+    '<div class="cal-grid">' + grid + '</div>';
+  document.body.appendChild(panel);
+  setActiveTray('tray-clock');
+  const updateTime = () => {
+    if (!document.body.contains(panel)) return;
+    const n = new Date();
+    panel.querySelector('.cal-time').textContent = pad2(n.getHours()) + ':' + pad2(n.getMinutes()) + ':' + pad2(n.getSeconds());
+    setTimeout(updateTime, 1000);
+  };
+  updateTime();
+}
+
+function closeOtherPanels(except){
+  if (except !== 'notif') { const p = document.getElementById('notif-panel'); if (p) p.classList.add('hidden'); }
+  if (except !== 'qs') { const p = document.getElementById('quick-settings'); if (p) p.remove(); }
+  if (except !== 'cal') { const p = document.getElementById('calendar-panel'); if (p) p.remove(); }
+}
+function setActiveTray(id){
+  document.querySelectorAll('.tray-btn').forEach(b => b.classList.remove('active'));
+  if (id) { const b = document.getElementById(id); if (b) b.classList.add('active'); }
+}
+document.addEventListener('click', e => {
+  const notif = document.getElementById('notif-panel');
+  if (notif && !notif.classList.contains('hidden') && !notif.contains(e.target) && !e.target.closest('#tray-bell')) notif.classList.add('hidden');
+  const qs = document.getElementById('quick-settings');
+  if (qs && !qs.contains(e.target) && !e.target.closest('#tray-wifi')) qs.remove();
+  const cal = document.getElementById('calendar-panel');
+  if (cal && !cal.contains(e.target) && !e.target.closest('#tray-clock')) cal.remove();
+});
+
+/* ============ START MENU ============ */
+let startMenuOpen = false;
+
+function toggleStartMenu(){
+  const menu = document.getElementById('start-menu');
+  startMenuOpen = !startMenuOpen;
+  if (startMenuOpen) { renderStartMenu(); menu.classList.remove('hidden'); }
+  else menu.classList.add('hidden');
+}
+
+function renderStartMenu(query){
+  const menu = document.getElementById('start-menu');
+  menu.innerHTML = '';
+  const search = el('div', 'sm-search');
+  search.innerHTML = ICONS.search + '<input type="text" placeholder="Tətbiq axtar..." id="sm-search-input">';
+  menu.appendChild(search);
+  const input = search.querySelector('#sm-search-input');
+  if (query) input.value = query;
+  input.addEventListener('input', () => renderStartMenu(input.value));
+  setTimeout(() => input.focus(), 30);
+  const q = (query || '').trim().toLowerCase();
+
+  function openFirstResult(){
+    if (q) {
+      const first = APPS.find(a => a.name.toLowerCase().indexOf(q) !== -1);
+      if (first) { toggleStartMenu(); openApp(first.id); return; }
+    }
+    const visibleApps = menu.querySelectorAll('.sm-app');
+    if (visibleApps.length > 0) { toggleStartMenu(); }
+  }
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { input.value = ''; renderStartMenu(); }
+    if (e.key === 'Enter') openFirstResult();
+  });
+
+  if (q) {
+    const results = APPS.filter(a => a.name.toLowerCase().indexOf(q) !== -1);
+    menu.appendChild(smLabel('Nəticələr'));
+    if (results.length === 0) menu.appendChild(el('div', 'sm-empty', 'Heç bir tətbiq tapılmadı.'));
+    else { const grid = el('div', 'sm-grid'); results.forEach(a => grid.appendChild(smAppTile(a))); menu.appendChild(grid); }
+  } else {
+    menu.appendChild(smLabel('Bütün tətbiqlər'));
+    const grid = el('div', 'sm-grid');
+    APPS.forEach(a => grid.appendChild(smAppTile(a)));
+    menu.appendChild(grid);
+    menu.appendChild(smLabel('Tövsiyə olunan'));
+    const recHost = el('div', 'sm-recommended');
+    if (state.recentApps.length === 0) recHost.appendChild(el('div', 'sm-empty', 'Hələ heç bir tətbiq açılmayıb.'));
+    else {
+      state.recentApps.forEach(appId => {
+        const app = APP_BY_ID[appId];
+        if (!app) return;
+        const item = el('button', 'sm-rec-item');
+        item.innerHTML = '<div class="sm-rec-icon" style="background:' + app.grad + '">' + ICONS[app.icon] + '</div>' +
+          '<div><div class="sm-rec-name">' + app.name + '</div><div class="sm-rec-sub">Son açılan</div></div>';
+        item.addEventListener('click', () => { toggleStartMenu(); openApp(app.id); });
+        recHost.appendChild(item);
+      });
+    }
+    menu.appendChild(recHost);
+  }
+
+  const foot = el('div', 'sm-footer');
+  foot.innerHTML = '<div class="sm-user"><div class="sm-avatar">AZ</div><span>Tələbə Hesabı</span></div>' +
+    '<button class="sm-power" id="sm-power" title="Sistem">' + ICONS.power + '</button>';
+  menu.appendChild(foot);
+  foot.querySelector('#sm-power').addEventListener('click', e => { e.stopPropagation(); startMenuOpen = false; menu.classList.add('hidden'); showPowerModal(); });
+}
+
+function smLabel(text){ return el('div', 'sm-section-label', text); }
+function smAppTile(app){
+  const tile = el('button', 'sm-app');
+  tile.innerHTML = '<div class="tile" style="background:' + app.grad + '">' + ICONS[app.icon] + '</div><div class="label">' + app.name + '</div>';
+  tile.addEventListener('click', () => { toggleStartMenu(); openApp(app.id); });
+  return tile;
+}
+
+document.addEventListener('click', e => {
+  if (!startMenuOpen) return;
+  const menu = document.getElementById('start-menu');
+  if (menu.contains(e.target)) return;
+  if (e.target.closest('#start-btn') || e.target.closest('#taskbar')) return;
+  startMenuOpen = false;
+  menu.classList.add('hidden');
+});
+
+/* ============ POWER MODAL ============ */
+function showPowerModal(){
+  showModal(
+    '<div class="modal-head">' +
+      '<div class="mh-icon" style="background:var(--danger-light);color:var(--danger)">' + ICONS.power + '</div>' +
+      '<div><h3>Sistemdən çıxış</h3><div class="mh-sub">Cari irəliləyiş silinəcək</div></div>' +
+    '</div>' +
+    '<div class="modal-body">' +
+      '<p style="font-size:13px;line-height:1.7;color:#3b3b3b;margin-bottom:14px">Yenidən başlatmaq bütün irəliləyişi, xalı və tapşırıq nəticələrini siləcək.</p>' +
+      '<div class="cert-row"><span class="ck">Cari xal</span><span class="cv">' + state.score + '</span></div>' +
+      '<div class="cert-row"><span class="ck">Ən yaxşı</span><span class="cv">' + state.bestScore + '</span></div>' +
+      '<div class="cert-row"><span class="ck">Həll edilmiş</span><span class="cv">' + SOLVED_COUNT() + ' / ' + TASK_ORDER.length + '</span></div>' +
+    '</div>' +
+    '<div class="modal-foot">' +
+      '<div class="modal-score">Davam etmək istəyirsiniz?</div>' +
+      '<div style="display:flex;gap:10px">' +
+        '<button class="m-btn ghost" id="powerCancel">Ləğv et</button>' +
+        '<button class="m-btn danger" id="powerRestart">Yenidən başlat</button>' +
+      '</div>' +
+    '</div>',
+    { dismissable: true }
+  );
+  document.getElementById('powerCancel').addEventListener('click', closeModal);
+  document.getElementById('powerRestart').addEventListener('click', () => {
+    closeModal();
+    clearSave();
+    try { localStorage.removeItem(N_KEY); } catch(e){}
+    setTimeout(() => location.reload(), 150);
+  });
+}
+
+/* ============ END SCREEN ============ */
+function showEndScreen(kind){
+  if (state.escaped) return;
+  state.escaped = true;
+  stopTimer(); saveState();
+  const screen = document.getElementById('escape-screen');
+  screen.classList.remove('hidden');
+  screen.classList.toggle('timeup', kind === 'timeup');
+  screen.innerHTML = '';
+  const solvedCount = SOLVED_COUNT();
+  const totalTasks = TASK_ORDER.length;
+  const hintsTotal = TASK_ORDER.reduce((s, id) => s + (state.hintsUsed[id] || 0), 0);
+  const elapsed = state.timerDuration - state.timerRemaining;
+  const timeStr = fmtTime(elapsed);
+  const badges = [];
+  if (solvedCount === totalTasks) {
+    const allFirstTry = TASK_ORDER.every(id => state.firstTry[id] !== false && state.solved[id]);
+    if (allFirstTry) badges.push({ icon: ICONS.zap, text: 'İlk cəhddə' });
+    if (hintsTotal === 0) badges.push({ icon: ICONS.hint, text: 'İpucusuz' });
+    if (elapsed <= 5 * 60 * 1000) badges.push({ icon: ICONS.trophy, text: 'Sürətli' });
+    if ((state.totalWrong || 0) === 0) badges.push({ icon: ICONS.shieldOk, text: 'Qüsursuz' });
+  }
+  if (state.bestScore > 0 && state.score >= state.bestScore) badges.push({ icon: ICONS.trophy, text: 'Yeni rekord' });
+  const title = kind === 'timeup' ? 'Vaxt bitdi!' : (solvedCount === totalTasks ? 'Quarantin açıldı!' : 'Oyun bitdi');
+  const subtitle = kind === 'timeup' ? 'Vaxt bitdi. Yenidən cəhd edin — hər səhv öyrədir.' :
+    (solvedCount === totalTasks ? 'Bütün 5 tapşırığı uğurla həll etdiniz. Quarantin otağı açıldı.' : 'Bütün tapşırıqları həll etməmiş bitirdiniz.');
+  const badgeIcon = kind === 'timeup' ? ICONS.clock : ICONS.shieldOk;
+  screen.innerHTML =
+    '<div class="esc-inner">' +
+      '<div class="esc-badge">' + badgeIcon + '</div>' +
+      '<div class="esc-title">' + title + '</div>' +
+      '<div class="esc-sub">' + subtitle + '</div>' +
+      '<div class="esc-stats">' +
+        '<div class="esc-stat"><div class="es-val">' + state.score + '</div><div class="es-lbl">Xal</div></div>' +
+        '<div class="esc-stat"><div class="es-val">' + solvedCount + '/' + totalTasks + '</div><div class="es-lbl">Həll</div></div>' +
+        '<div class="esc-stat"><div class="es-val">' + timeStr + '</div><div class="es-lbl">Vaxt</div></div>' +
+        '<div class="esc-stat"><div class="es-val">' + state.bestScore + '</div><div class="es-lbl">Rekord</div></div>' +
+      '</div>' +
+      (badges.length ? '<div class="esc-badges-title">Nailiyyətlər</div><div class="esc-badges">' + badges.map(b => '<div class="esc-badge-pill">' + b.icon + '<span>' + b.text + '</span></div>').join('') + '</div>' : '') +
+      '<button class="esc-btn" id="escRestart">Yenidən başla</button>' +
+      '<button class="esc-btn ghost" id="escReview" style="margin-top:10px">Nəticələrə bax</button>' +
+      '<div class="esc-note">Siz artıq real həyatda bu tələləri tanımağı bacarırsınız. Şübhəli linklərə klikləməzdən əvvəl həmişə iki dəfə düşünün.</div>' +
+    '</div>';
+  document.getElementById('escRestart').addEventListener('click', () => { clearSave(); try { localStorage.removeItem(N_KEY); } catch(e){} location.reload(); });
+  document.getElementById('escReview').addEventListener('click', () => { screen.classList.add('hidden'); if (SOLVED_COUNT() < TASK_ORDER.length) showModeModal(); });
+}
+
+/* ============ MODE MODAL ============ */
+function showModeModal(){
+  showModal(
+    '<div class="modal-head"><div class="mh-icon">' + ICONS.zap + '</div><div><h3>Oyun rejimini seçin</h3><div class="mh-sub">Sayğac ilk tətbiq açılanda başlayır</div></div></div>' +
+    '<div class="modal-body"><div class="mode-options">' +
+      '<button class="mode-card" data-mode="normal"><div class="mc-icon">' + ICONS.shieldOk + '</div><div class="mc-name">Normal</div><div class="mc-desc">10 dəqiqə — rahat temp</div></button>' +
+      '<button class="mode-card" data-mode="speedrun"><div class="mc-icon">' + ICONS.zap + '</div><div class="mc-name">Speedrun</div><div class="mc-desc">4 dəqiqə — sürətli</div></button>' +
+    '</div></div>',
+    { dismissable: false }
+  );
+  document.querySelectorAll('.mode-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      state.mode = mode;
+      state.timerDuration = mode === 'speedrun' ? SPEEDRUN_DURATION : DEFAULT_DURATION;
+      state.timerRemaining = state.timerDuration;
+      state.timerEnd = null; state.timerStarted = false;
+      closeModal(); updateTimerDisplay(); saveState();
+      toast('Oyun rejimi', (mode === 'speedrun' ? 'Speedrun' : 'Normal') + ' — ' + (mode === 'speedrun' ? '4' : '10') + ' dəqiqə. Uğurlar!', 'info', 4000, true);
+    });
+  });
+}
+
+/* ============ BOOT ============ */
+const BOOT_STEPS = ['Yaddaş yoxlanılır...','Təhlükəsizlik modulu yüklənir...','Quarantin otağı hazırlanır...','5 tapşırıq aşkarlandı...','Sistem hazırdır.'];
+function runBoot(){
+  const bar = document.getElementById('boot-bar-fill');
+  const status = document.getElementById('boot-status');
+  let i = 0;
+  const timer = setInterval(() => {
+    if (i < BOOT_STEPS.length) {
+      status.textContent = BOOT_STEPS[i];
+      bar.style.width = Math.round((i + 1) / BOOT_STEPS.length * 100) + '%';
+      i++;
+    } else {
+      clearInterval(timer);
+      setTimeout(() => {
+        document.getElementById('boot-screen').classList.add('fade');
+        document.getElementById('desktop').classList.remove('hidden');
+        setTimeout(() => document.getElementById('boot-screen').remove(), 750);
+        afterBoot();
+      }, 350);
+    }
+  }, 480);
+}
+
+function afterBoot(){
+  renderDesktopIcons();
+  renderLockWidget();
+  renderTaskbar();
+  updateHintButton();
+  notifications.init();
+  notifications.render();
+  notifications.updateBadge();
+
+  events.on('task:solved', d => {
+    const task = TASKS[d.taskId];
+    const extras = [];
+    if (d.within30s) extras.push('sürət bonusu');
+    if (d.streakBonus) extras.push('streak ×1.2');
+    toast('Tapşırıq həll olundu', task.title + ' — +' + d.points + ' bal' + (extras.length ? ' (' + extras.join(', ') + ')' : ''), 'success', 5000);
+  });
+  events.on('task:wrong', d => {
+    const task = TASKS[d.taskId];
+    toast('Səhv cavab', task.title + (d.penalty > 0 ? ' — −' + d.penalty + ' bal' : ' — cəzasız (ilk 2 səhv)'), 'error', 5000);
+  });
+
+  const restored = loadState();
+  if (restored && state.escaped) { showEndScreen(state.timerRemaining <= 0 ? 'timeup' : 'escape'); return; }
+  if (restored && state.timerStarted && state.timerEnd) {
+    const remaining = state.timerEnd - Date.now();
+    if (remaining <= 0) { state.timerRemaining = 0; showEndScreen('timeup'); return; }
+    state.timerRemaining = remaining;
+    updateTimerDisplay();
+  } else if (restored && Object.keys(state.solved).length > 0) {
+    state.timerStarted = false;
+    showModeModal();
+  } else {
+    showModeModal();
+  }
+}
+
+window.addEventListener('load', runBoot);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    hideContextMenu();
+    const notif = document.getElementById('notif-panel'); if (notif) notif.classList.add('hidden');
+    const qs = document.getElementById('quick-settings'); if (qs) qs.remove();
+    const cal = document.getElementById('calendar-panel'); if (cal) cal.remove();
+    if (startMenuOpen) { startMenuOpen = false; document.getElementById('start-menu').classList.add('hidden'); }
+    const modal = document.getElementById('modal-backdrop');
+    if (modal && !modal.classList.contains('hidden')) closeModal();
+  }
+});
+
+})();
+</script>
+</body>
+</html>

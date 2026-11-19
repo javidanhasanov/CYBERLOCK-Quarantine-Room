@@ -28,28 +28,28 @@ Oyunun əsas məqsədi istifadəçilərə aşağıdakı praktiki kibertəhlükə
 
 ## ✨ Əsas Xüsusiyyətlər
 
-### Oyun Mexanikası
-- **5 fərqli tapşırıq** — hər biri fərqli təhlükəsizlik mövzusunu əhatə edir
-- **İki oyun rejimi** — Normal (10 dəqiqə) və Speedrun (4 dəqiqə)
-- **Bal sistemi** — hər tapşırıq üçün 100 bal + bonuslar
-- **İpucu sistemi** — hər tapşırıq üçün 3 mərhələli ipucu (−15 bal)
-- **Cərimə mexanizmi** — ilk 2 səhv cəzasız, sonrakılar −10 bal
-- **Nailiyyət nişanları (badges)** — "İlk cəhddə", "İpucusuz", "Sürətli", "Qüsursuz", "Yeni rekord"
+Oyun Mexanikası
+5 fərqli tapşırıq** — hər biri fərqli təhlükəsizlik mövzusunu əhatə edir
+İki oyun rejimi** — Normal (10 dəqiqə) və Speedrun (4 dəqiqə)
+Bal sistemi** — hər tapşırıq üçün 100 bal + bonuslar
+İpucu sistemi** — hər tapşırıq üçün 3 mərhələli ipucu (−15 bal)
+Cərimə mexanizmi** — ilk 2 səhv cəzasız, sonrakılar −10 bal
+Nailiyyət nişanları (badges)** — "İlk cəhddə", "İpucusuz", "Sürətli", "Qüsursuz", "Yeni rekord"
 
-### İstifadəçi İnterfeysi (UI)
-- Windows 11 üslubunda **masaüstü mühiti** (desktop)
-- **Pəncərə idarəetmə sistemi** — sürükləmə, minimuma/maksimuma endirmə, bağlama
-- **Başlat menyusu (Start Menu)** — axtarış və son açılan tətbiqlər
-- **Tapşırıq paneli (Taskbar)** — saat, taymer, bildirişlər, ipucu düyməsi
-- **Bildiriş mərkəzi** — toast bildirişləri və oxunmamış sayğacı
-- **Kontekst menyu (sağ klik)** — Mail tətbiqində mesaj əməliyyatları
+İstifadəçi İnterfeysi (UI)
+Windows 11 üslubunda **masaüstü mühiti** (desktop)
+Pəncərə idarəetmə sistemi** — sürükləmə, minimuma/maksimuma endirmə, bağlama
+Başlat menyusu (Start Menu)** — axtarış və son açılan tətbiqlər
+Tapşırıq paneli (Taskbar)** — saat, taymer, bildirişlər, ipucu düyməsi
+Bildiriş mərkəzi** — toast bildirişləri və oxunmamış sayğacı
+Kontekst menyu (sağ klik)** — Mail tətbiqində mesaj əməliyyatları
 
 ### Texniki Xüsusiyyətlər
-- **Tək fayl arxitekturası** — bütün kod bir `.html` faylında
-- **Oflayn işləyir** — internet bağlantısı tələb etmir
-- **localStorage davamlılığı** — oyun irəliləyişi avtomatik yadda saxlanılır
-- **Event Bus (Pub/Sub)** — hadisə əsaslı genişləndirilə bilən arxitektura
-- **Responsiv modal sistemi** — debrief, səhv cavab, sertifikat, rejim seçimi modalları
+Tək fayl arxitekturası** — bütün kod bir `.html` faylında
+Oflayn işləyir** — internet bağlantısı tələb etmir
+localStorage davamlılığı** — oyun irəliləyişi avtomatik yadda saxlanılır
+Event Bus (Pub/Sub)** — hadisə əsaslı genişləndirilə bilən arxitektura
+Responsiv modal sistemi** — debrief, səhv cavab, sertifikat, rejim seçimi modalları
 
 ---
 

@@ -86,8 +86,8 @@ Hər tapşırıq həll edildikdən sonra **"Debrief"** modalı açılır və ü�
 
 ## ⏱️ Taymer Sistemi
 
-- **Normal rejim** — 10 dəqiqə
-- **Speedrun rejimi** — 4 dəqiqə
+Normal rejim** — 10 dəqiqə
+Speedrun rejimi** — 4 dəqiqə
 - Sayğac **ilk tətbiq açılanda** başlayır (rejim seçimindən sonra)
 - Son 60 saniyədə taymer **qırmızı rəngə** keçir
 - Vaxt bitdikdə "Vaxt bitdi!" ekranı açılır
